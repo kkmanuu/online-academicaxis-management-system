@@ -23,7 +23,8 @@ app.use('/api/student', require('./routes/student'));
 app.use('/api/exams', require('./routes/exam'));
 
 // MongoDB connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/academicaxis', {
+console.log('Mongo URI:', process.env.MONGODB_URI);
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
