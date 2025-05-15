@@ -4,6 +4,9 @@ import { Box, CircularProgress } from '@mui/material';
 
 const AuthContext = createContext(null);
 
+// Use environment variable for API base URL
+const API_URL = process.env.REACT_APP_API_URL;
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,10 +29,10 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      const response = await axios.get('http://localhost:5000/api/auth/me', {
+      const response = await axios.get(`${API_URL}/api/auth/me`, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       setUser(response.data);
@@ -49,24 +52,25 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password, role = 'student') => {
     try {
       setError(null);
-      
+
       if (!email || !password) {
-        setError('Email and password are required');
-        return { success: false, error: 'Email and password are required' };
+        const errMsg = 'Email and password are required';
+        setError(errMsg);
+        return { success: false, error: errMsg };
       }
-      
+
       console.log('Attempting login with email:', email, 'and role:', role);
-      
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
+
+      const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password,
-        role
+        role,
       });
 
       console.log('Login response:', response.data);
-      
+
       const { token, user } = response.data;
-      
+
       if (token && user) {
         localStorage.setItem('token', token);
         setUser(user);
@@ -76,18 +80,19 @@ export const AuthProvider = ({ children }) => {
         setError(errorMsg);
         return {
           success: false,
-          error: errorMsg
+          error: errorMsg,
         };
       }
     } catch (error) {
       console.error('Login error:', error);
       console.error('Error response:', error.response?.data);
-      
-      const errorMessage = error.response?.data?.message || 'Login failed. Please check your credentials.';
+
+      const errorMessage =
+        error.response?.data?.message || 'Login failed. Please check your credentials.';
       setError(errorMessage);
       return {
         success: false,
-        error: errorMessage
+        error: errorMessage,
       };
     }
   };
@@ -104,7 +109,7 @@ export const AuthProvider = ({ children }) => {
       console.warn('No auth token found in localStorage');
       return {};
     }
-    return { 'Authorization': `Bearer ${token}` };
+    return { Authorization: `Bearer ${token}` };
   };
 
   const isAuthenticated = () => !!user;
@@ -124,7 +129,9 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, getAuthHeader, error, isAuthenticated }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, getAuthHeader, error, isAuthenticated }}
+    >
       {children}
     </AuthContext.Provider>
   );
