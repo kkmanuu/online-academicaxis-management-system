@@ -47,6 +47,9 @@ const ExamInterface = () => {
       if (wsRef.current) {
         wsRef.current.close();
       }
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+      }
     };
   }, [examId]);
 
@@ -56,20 +59,18 @@ const ExamInterface = () => {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       console.log('Exam data received:', response.data);
-      
-      // Check if questions property exists and is an array
+
       if (!response.data.questions || !Array.isArray(response.data.questions)) {
         console.warn('Exam data does not contain valid questions property');
-        // Initialize with empty array if questions is missing
         response.data.questions = [];
       }
-      
+
       setExam(response.data);
       setLoading(false);
       startTimer(response.data.duration);
     } catch (error) {
       console.error('Error fetching exam details:', error);
-      setError('Failed to load exam details. Please try again.');
+      setError(error.response?.data?.message || 'Failed to load exam details. Please try again.');
       setLoading(false);
     }
   };
@@ -82,6 +83,7 @@ const ExamInterface = () => {
         videoRef.current.srcObject = stream;
       }
     } catch (error) {
+      console.error('Camera access error:', error);
       setError('Failed to access camera. Please ensure camera permissions are granted.');
     }
   };
@@ -91,6 +93,7 @@ const ExamInterface = () => {
     wsRef.current = ws;
 
     ws.onopen = () => {
+      console.log('WebSocket connected');
       ws.send(JSON.stringify({
         type: 'student_join',
         examId,
@@ -104,57 +107,67 @@ const ExamInterface = () => {
         await handleWebRTCOffer(data.offer);
       }
     };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket closed');
+    };
   };
 
   const handleWebRTCOffer = async (offer) => {
-    const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    });
-    peerConnectionRef.current = pc;
-
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => {
-        pc.addTrack(track, cameraStream);
+    try {
+      const pc = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
       });
-    }
+      peerConnectionRef.current = pc;
 
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        wsRef.current.send(JSON.stringify({
-          type: 'ice_candidate',
-          candidate: event.candidate,
-          examId,
-          studentId: user._id
-        }));
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => {
+          pc.addTrack(track, cameraStream);
+        });
       }
-    };
 
-    await pc.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          wsRef.current.send(JSON.stringify({
+            type: 'ice_candidate',
+            candidate: event.candidate,
+            examId,
+            studentId: user._id
+          }));
+        }
+      };
 
-    wsRef.current.send(JSON.stringify({
-      type: 'webrtc_answer',
-      answer,
-      examId,
-      studentId: user._id
-    }));
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      wsRef.current.send(JSON.stringify({
+        type: 'webrtc_answer',
+        answer,
+        examId,
+        studentId: user._id
+      }));
+    } catch (error) {
+      console.error('WebRTC error:', error);
+    }
   };
 
   const startTimer = (duration) => {
     const endTime = Date.now() + duration * 60 * 1000;
-    
+
     const timer = setInterval(() => {
       const remaining = endTime - Date.now();
-      
+
       if (remaining <= 0) {
         clearInterval(timer);
-        // Stop the camera before auto-submitting
         if (cameraStream) {
           cameraStream.getTracks().forEach(track => track.stop());
           setCameraStream(null);
         }
-        // Close WebSocket connection
         if (wsRef.current) {
           wsRef.current.close();
         }
@@ -174,6 +187,11 @@ const ExamInterface = () => {
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
+    if (exam.questions.length > 0 && Object.keys(answers).length !== exam.questions.length) {
+      setError('Please answer all questions before submitting.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -181,32 +199,26 @@ const ExamInterface = () => {
         cameraStream.getTracks().forEach(track => track.stop());
         setCameraStream(null);
       }
-      
+
       if (wsRef.current) {
         wsRef.current.close();
       }
 
       console.log('Submitting exam with answers:', answers);
-      
+
       const response = await axios.post(`http://localhost:5000/api/student/exams/${examId}/submit`, {
         answers
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-      
+
       console.log('Exam submission response:', response.data);
+      alert(`Exam submitted successfully! Your score: ${response.data.score}%`);
       navigate('/student/results');
     } catch (error) {
       console.error('Error submitting exam:', error);
       console.error('Error details:', error.response ? error.response.data : 'No response data');
-      
-      // Display a more specific error message
-      if (error.response && error.response.data && error.response.data.message) {
-        setError(`Failed to submit exam: ${error.response.data.message}`);
-      } else {
-        setError('Failed to submit exam. Please try again.');
-      }
-      
+      setError(error.response?.data?.message || 'Failed to submit exam. Please try again.');
       setIsSubmitting(false);
     }
   };
@@ -246,9 +258,10 @@ const ExamInterface = () => {
               exam.questions.map((question, index) => (
                 <Box key={question._id} sx={{ mb: 4 }}>
                   <Typography variant="h6" gutterBottom>
-                    {index + 1}. {question.text}
+                    {index + 1}. {question.text} ({question.marks} marks)
                   </Typography>
                   <FormControl component="fieldset">
+                    <FormLabel component="legend">Select an option</FormLabel>
                     <RadioGroup
                       value={answers[question._id] || ''}
                       onChange={(e) => handleAnswerChange(question._id, e.target.value)}
@@ -256,9 +269,9 @@ const ExamInterface = () => {
                       {question.options.map((option, optionIndex) => (
                         <FormControlLabel
                           key={optionIndex}
-                          value={option}
+                          value={String.fromCharCode(97 + optionIndex)} // Sends 'a', 'b', 'c', 'd'
                           control={<Radio />}
-                          label={option}
+                          label={`${String.fromCharCode(65 + optionIndex)}. ${option}`}
                         />
                       ))}
                     </RadioGroup>
@@ -301,4 +314,4 @@ const ExamInterface = () => {
   );
 };
 
-export default ExamInterface; 
+export default ExamInterface;
