@@ -19,7 +19,8 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Alert
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useAuth } from '../../shared/context/AuthContext';
@@ -36,6 +37,7 @@ const QuestionManagement = () => {
     correctAnswer: 0,
     marks: 1
   });
+  const [error, setError] = useState('');
 
   const { examId } = useParams();
   const { getAuthHeader, user } = useAuth();
@@ -51,9 +53,11 @@ const QuestionManagement = () => {
       const response = await axios.get(`http://localhost:5000/api/exams/${examId}`, {
         headers: getAuthHeader()
       });
+      console.log('Fetched exam data:', response.data);
       setQuestions(response.data.questions || []);
     } catch (error) {
       console.error('Error fetching questions:', error);
+      setError('Failed to load questions. Please try again.');
     }
   };
 
@@ -62,12 +66,10 @@ const QuestionManagement = () => {
       const response = await axios.get(`http://localhost:5000/api/exams/${examId}`, {
         headers: getAuthHeader()
       });
-      
       console.log('Exam data:', response.data);
       console.log('Teacher ID from exam:', response.data.teacher._id);
       console.log('Current user ID:', user._id);
-      
-      // Check if the exam belongs to the current teacher
+
       if (response.data.teacher._id !== user._id) {
         console.error('Exam does not belong to the current teacher');
         alert('You are not authorized to manage questions for this exam');
@@ -98,19 +100,21 @@ const QuestionManagement = () => {
         marks: 1
       });
     }
+    setError('');
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedQuestion(null);
+    setError('');
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'marks' ? parseInt(value) : value
     }));
   };
 
@@ -123,21 +127,50 @@ const QuestionManagement = () => {
     }));
   };
 
+  const validateForm = () => {
+    if (!formData.question.trim()) {
+      setError('Question text is required.');
+      return false;
+    }
+    if (formData.options.some(opt => !opt.trim())) {
+      setError('All options must be filled.');
+      return false;
+    }
+    const uniqueOptions = new Set(formData.options.map(opt => opt.trim().toLowerCase()));
+    if (uniqueOptions.size < formData.options.length) {
+      setError('Options must be unique.');
+      return false;
+    }
+    if (formData.marks < 1) {
+      setError('Marks must be at least 1.');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     try {
-      // Log the exam ID and form data for debugging
-      console.log('Adding questions to exam:', examId);
+      console.log('Submitting question for exam:', examId);
       console.log('Question data:', formData);
-      
+
       if (selectedQuestion) {
-        // Update question logic here
+        // Update question
+        const response = await axios.put(
+          `http://localhost:5000/api/questions/${selectedQuestion._id}`,
+          { ...formData, exam: examId },
+          { headers: getAuthHeader() }
+        );
+        console.log('Question updated successfully:', response.data);
       } else {
-        const response = await axios.post(`http://localhost:5000/api/exams/${examId}/questions`, {
-          questions: [formData]
-        }, {
-          headers: getAuthHeader()
-        });
+        // Add new question
+        const response = await axios.post(
+          `http://localhost:5000/api/exams/${examId}/questions`,
+          formData,
+          { headers: getAuthHeader() }
+        );
         console.log('Question added successfully:', response.data);
       }
       fetchQuestions();
@@ -145,24 +178,28 @@ const QuestionManagement = () => {
     } catch (error) {
       console.error('Error saving question:', error);
       console.error('Error details:', error.response?.data);
-      alert(`Failed to save question: ${error.response?.data?.message || error.message}`);
+      setError(`Failed to save question: ${error.response?.data?.message || error.message}`);
     }
   };
 
   const handleDelete = async (questionId) => {
     if (window.confirm('Are you sure you want to delete this question?')) {
       try {
-        // Delete question logic here
+        await axios.delete(`http://localhost:5000/api/questions/${questionId}`, {
+          headers: getAuthHeader()
+        });
+        console.log('Question deleted successfully:', questionId);
         fetchQuestions();
       } catch (error) {
         console.error('Error deleting question:', error);
+        setError('Failed to delete question. Please try again.');
       }
     }
   };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box display="flex" justifyContent="space:before" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1">
           Question Management
         </Typography>
@@ -175,6 +212,12 @@ const QuestionManagement = () => {
           Add Question
         </Button>
       </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
       <Paper>
         <List>
@@ -190,12 +233,12 @@ const QuestionManagement = () => {
                     {' '}
                     {question.options.map((option, i) => (
                       <Typography key={i} component="span" variant="body2">
-                        {i + 1}. {option}{' '}
+                        {String.fromCharCode(65 + i)}. {option}{' '}
                       </Typography>
                     ))}
                     <br />
                     <Typography component="span" variant="body2" color="text.primary">
-                      Correct Answer: {question.correctAnswer + 1}
+                      Correct Answer: {String.fromCharCode(65 + question.correctAnswer)}
                     </Typography>
                     {' | '}
                     <Typography component="span" variant="body2" color="text.primary">
@@ -220,6 +263,11 @@ const QuestionManagement = () => {
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>{selectedQuestion ? 'Edit Question' : 'Add New Question'}</DialogTitle>
         <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
@@ -238,7 +286,7 @@ const QuestionManagement = () => {
                 <Grid item xs={12} key={index}>
                   <TextField
                     fullWidth
-                    label={`Option ${index + 1}`}
+                    label={`Option ${String.fromCharCode(65 + index)}`}
                     value={option}
                     onChange={(e) => handleOptionChange(index, e.target.value)}
                     required
@@ -256,7 +304,7 @@ const QuestionManagement = () => {
                   >
                     {formData.options.map((_, index) => (
                       <MenuItem key={index} value={index}>
-                        Option {index + 1}
+                        Option {String.fromCharCode(65 + index)}
                       </MenuItem>
                     ))}
                   </Select>
@@ -270,6 +318,7 @@ const QuestionManagement = () => {
                   type="number"
                   value={formData.marks}
                   onChange={handleInputChange}
+                  inputProps={{ min: 1 }}
                   required
                 />
               </Grid>
@@ -287,4 +336,4 @@ const QuestionManagement = () => {
   );
 };
 
-export default QuestionManagement; 
+export default QuestionManagement;
