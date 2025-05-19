@@ -23,17 +23,12 @@ app.use('/api/student', require('./routes/student'));
 app.use('/api/exams', require('./routes/exam'));
 
 // MongoDB connection
-console.log('Mongo URI:', process.env.MONGODB_URI);
-mongoose.connect(process.env.MONGODB_URI, {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/academicaxis', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
-.then(() => console.log('✅ MongoDB Connected'))
-.catch(err => console.log('❌ MongoDB connection error:', err));
-
-app.get('/', (req, res) => {
-  res.send('Backend API is running');
-});
+.then(() => console.log('MongoDB Connected'))
+.catch(err => console.log('MongoDB connection error:', err));
 
 // Start server
 const PORT = process.env.PORT || 5000;
