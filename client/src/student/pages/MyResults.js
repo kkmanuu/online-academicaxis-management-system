@@ -119,9 +119,9 @@ const MyResults = () => {
               backgroundColor: '#3f51b5',
               color: '#fff',
               fontWeight: 'bold',
-              borderRadius: 1,
+              borderRadius: '16px',
               px: 2,
-              py: 1,
+              py: 0.5,
               '&:hover': {
                 backgroundColor: '#303f9f',
                 cursor: 'pointer'
@@ -168,19 +168,17 @@ const MyResults = () => {
                   }}
                 >
                   <TableCell sx={{ color: '#455a64' }}>{result.exam?.title || 'N/A'}</TableCell>
-                  <TableCell sx={{ color: '#455a64' }}>
-                    {result.exam?.course?.name || result.course?.name || 'N/A'}
-                  </TableCell>
+                  <TableCell sx={{ color: '#455a64' }}>{result.exam?.course?.name || 'N/A'}</TableCell>
                   <TableCell sx={{ color: '#455a64' }}>{result.marksObtained || 0}</TableCell>
                   <TableCell sx={{ color: '#455a64' }}>{result.totalMarks || 0}</TableCell>
-                  <TableCell sx={{ color: '#455a64' }}>{result.percentage?.toFixed(2)}%</TableCell>
+                  <TableCell sx={{ color: '#455a64' }}>{(result.percentage || 0).toFixed(2)}%</TableCell>
                   <TableCell>
                     <Chip
-                      label={result.status}
+                      label={result.status || 'N/A'}
                       color={result.status === 'pass' ? 'success' : 'error'}
                       sx={{
                         fontWeight: 'bold',
-                        borderRadius: 1
+                        borderRadius: '16px'
                       }}
                     />
                   </TableCell>
