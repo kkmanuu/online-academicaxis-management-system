@@ -216,7 +216,6 @@ exports.getAvailableExams = async (req, res) => {
   }
 };
 
-
 exports.getTeacherExams = async (req, res) => {
   try {
     console.log('getTeacherExams - Start:', { studentId: req.user?._id });
@@ -311,168 +310,239 @@ exports.getExamDetails = async (req, res) => {
       console.error('Error getting exam details:', error);
       res.status(500).json({ message: 'Server error' });
     }
-  };
-  exports.submitExam = async (req, res) => {
-    try {
-      const { examId } = req.params;
-      const { answers } = req.body;
-      const studentId = req.user.id;
-  
-      console.log('Submitting exam:', { examId, studentId, answers });
-  
-      // Get exam details with populated fields
-      const exam = await Exam.findById(examId)
-        .populate('questions')
-        .populate('teacher')
-        .populate('course');
-      
-      if (!exam) {
-        console.error('Exam not found:', examId);
-        return res.status(404).json({ message: 'Exam not found' });
-      }
-  
-      console.log('Exam found:', { 
-        id: exam._id, 
-        title: exam.title, 
-        teacher: exam.teacher ? exam.teacher._id : 'Not populated',
-        course: exam.course ? exam.course._id : 'Not populated',
-        questionsCount: exam.questions ? exam.questions.length : 0
+};
+
+exports.submitExam = async (req, res) => {
+  try {
+    const { examId } = req.params;
+    const { answers } = req.body;
+    const studentId = req.user.id;
+
+    console.log('Submitting exam:', { examId, studentId, answers });
+
+    // Validate answers object
+    if (!answers || typeof answers !== 'object' || Object.keys(answers).length === 0) {
+      console.warn('Invalid or empty answers object:', answers);
+      return res.status(400).json({ message: 'Answers are required' });
+    }
+
+    // Get exam details with populated fields
+    const exam = await Exam.findById(examId)
+      .populate('questions')
+      .populate('teacher')
+      .populate('course');
+
+    if (!exam) {
+      console.error('Exam not found:', examId);
+      return res.status(404).json({ message: 'Exam not found' });
+    }
+
+    console.log('Exam found:', {
+      id: exam._id,
+      title: exam.title,
+      teacher: exam.teacher ? exam.teacher._id : 'Not populated',
+      course: exam.course ? exam.course._id : 'Not populated',
+      questionsCount: exam.questions ? exam.questions.length : 0
+    });
+
+    // Check if exam is still active
+    const now = new Date();
+    if (now > exam.endTime) {
+      console.error('Exam submission time has expired:', {
+        examId,
+        endTime: exam.endTime,
+        currentTime: now
       });
-  
-      // Check if exam is still active
-      const now = new Date();
-      if (now > exam.endTime) {
-        console.error('Exam submission time has expired:', { 
-          examId, 
-          endTime: exam.endTime, 
-          currentTime: now 
-        });
-        return res.status(400).json({ message: 'Exam submission time has expired' });
-      }
-  
-      // Check if student has already submitted
-      const existingResult = await Result.findOne({
-        student: studentId,
-        exam: examId
+      return res.status(400).json({ message: 'Exam submission time has expired' });
+    }
+
+    // Check if student has already submitted
+    const existingResult = await Result.findOne({
+      student: studentId,
+      exam: examId
+    });
+
+    if (existingResult) {
+      console.error('Student has already submitted this exam:', {
+        studentId,
+        examId,
+        resultId: existingResult._id
       });
-  
-      if (existingResult) {
-        console.error('Student has already submitted this exam:', { 
-          studentId, 
-          examId, 
-          resultId: existingResult._id 
-        });
-        return res.status(400).json({ message: 'You have already submitted this exam' });
+      return res.status(400).json({ message: 'You have already submitted this exam' });
+    }
+
+    // Format answers for the Result model
+    const formattedAnswers = Object.entries(answers).map(([questionId, selectedOption]) => {
+      const question = exam.questions.find(q => q._id.toString() === questionId);
+      if (!question) {
+        console.warn(`Question with ID ${questionId} not found in exam`);
+        return null;
       }
-  
-      // Format answers for the Result model
-      const formattedAnswers = Object.entries(answers).map(([questionId, selectedOption]) => {
-        const question = exam.questions.find(q => q._id.toString() === questionId);
-        if (!question) {
-          console.warn(`Question with ID ${questionId} not found in exam`);
+
+      let numericAnswer;
+      if (typeof selectedOption === 'string') {
+        // Convert 'a', 'b', 'c', 'd' to 0, 1, 2, 3
+        const lowerOption = selectedOption.toLowerCase();
+        if (!/[a-d]/.test(lowerOption)) {
+          console.warn(`Invalid selectedOption letter for question ${questionId}:`, selectedOption);
           return null;
         }
-        
-        // Convert string answer to number (0-based index)
-        let numericAnswer;
-        if (typeof selectedOption === 'string') {
-          // Convert 'a', 'b', 'c', 'd' to 0, 1, 2, 3
-          numericAnswer = selectedOption.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0);
-        } else {
-          numericAnswer = selectedOption;
-        }
-        
-        const isCorrect = numericAnswer === question.correctAnswer;
-        return {
-          questionIndex: exam.questions.findIndex(q => q._id.toString() === questionId),
-          selectedAnswer: numericAnswer, // Use the numeric answer
-          isCorrect,
-          marksObtained: isCorrect ? question.marks : 0
-        };
-      }).filter(Boolean); // Remove null entries
-  
-      console.log('Formatted answers:', formattedAnswers);
-  
-      // Calculate score
-      const totalMarks = exam.totalMarks;
-      const marksObtained = formattedAnswers.reduce((sum, answer) => sum + answer.marksObtained, 0);
-      const percentage = (marksObtained / totalMarks) * 100;
-      const status = percentage >= exam.passingMarks ? 'pass' : 'fail';
-  
-      console.log('Score calculation:', { 
-        totalMarks, 
-        marksObtained, 
-        percentage, 
-        status, 
-        passingMarks: exam.passingMarks 
-      });
-  
-      // Ensure all required fields are present
-      if (!exam.teacher || !exam.course) {
-        console.error('Missing required fields:', { 
-          teacher: exam.teacher ? 'Present' : 'Missing', 
-          course: exam.course ? 'Present' : 'Missing' 
-        });
-        return res.status(500).json({ message: 'Exam data is incomplete' });
+        numericAnswer = lowerOption.charCodeAt(0) - 'a'.charCodeAt(0);
+      } else if (typeof selectedOption === 'number') {
+        numericAnswer = selectedOption;
+      } else {
+        console.warn(`Invalid selectedOption format for question ${questionId}:`, selectedOption);
+        return null;
       }
-  
-      // Create result with explicit teacher ID
-      const result = new Result({
-        student: studentId,
-        exam: examId,
-        teacher: exam.teacher._id, // Use the teacher ID from the populated exam
-        course: exam.course._id, // Use the course ID from the populated exam
-        answers: formattedAnswers,
-        totalMarks,
-        marksObtained,
-        percentage,
-        status,
-        submittedAt: new Date()
-      });
-  
-      console.log('Saving result:', result);
-      await result.save();
-  
-      res.json({
-        message: 'Exam submitted successfully',
-        score: percentage
-      });
-    } catch (error) {
-      console.error('Error submitting exam:', error);
-      console.error('Error stack:', error.stack);
-      res.status(500).json({ message: 'Server error' });
-    }
-  };
 
-  exports.getResults = async (req, res) => {
-    try {
-      const studentId = req.user.id;
-      console.log('Fetching results for student:', studentId);
-  
-      const results = await Result.find({ student: studentId })
-        .populate('exam', 'title course')
-        .populate('exam.course', 'name')
-        .sort({ submittedAt: -1 });
-  
-      console.log(`Found ${results.length} results for student ${studentId}`);
-      
-      if (results.length > 0) {
-        console.log('First result:', {
-          id: results[0]._id,
-          examTitle: results[0].exam ? results[0].exam.title : 'No exam title',
-          courseName: results[0].exam && results[0].exam.course ? results[0].exam.course.name : 'No course name',
-          percentage: results[0].percentage,
-          status: results[0].status
+      // Validate numericAnswer
+      if (numericAnswer < 0 || numericAnswer >= question.options.length) {
+        console.warn(`numericAnswer out of range for question ${questionId}:`, {
+          numericAnswer,
+          optionCount: question.options.length
         });
+        return null;
       }
-  
-      res.json(results);
-    } catch (error) {
-      console.error('Error getting results:', error);
-      console.error('Error stack:', error.stack);
-      res.status(500).json({ message: 'Server error' });
+
+      const isCorrect = numericAnswer === question.correctAnswer;
+      console.log(`Processing answer for question ${questionId}:`, {
+        questionText: question.question.substring(0, 50), // Log first 50 chars of question
+        selectedOption,
+        numericAnswer,
+        correctAnswer: question.correctAnswer,
+        isCorrect
+      });
+
+      return {
+        questionIndex: exam.questions.findIndex(q => q._id.toString() === questionId),
+        selectedAnswer: numericAnswer,
+        isCorrect,
+        marksObtained: isCorrect ? question.marks : 0
+      };
+    }).filter(Boolean);
+
+    // Check if any valid answers were processed
+    if (formattedAnswers.length === 0) {
+      console.warn('No valid answers processed:', answers);
+      return res.status(400).json({ message: 'No valid answers provided' });
     }
-  };
+
+    // Calculate score
+    const totalMarks = exam.totalMarks;
+    const marksObtained = formattedAnswers.reduce((sum, answer) => sum + answer.marksObtained, 0);
+    const percentage = (marksObtained / totalMarks) * 100;
+    const passingPercentage = (exam.passingMarks / exam.totalMarks) * 100;
+    const status = percentage >= passingPercentage ? 'pass' : 'fail';
+
+    console.log('Score calculation:', {
+      totalMarks,
+      marksObtained,
+      percentage: percentage.toFixed(2),
+      passingMarks: exam.passingMarks,
+      passingPercentage: passingPercentage.toFixed(2),
+      status
+    });
+
+    // Ensure all required fields are present
+    if (!exam.teacher || !exam.course) {
+      console.error('Missing required fields:', {
+        teacher: exam.teacher ? 'Present' : 'Missing',
+        course: exam.course ? 'Present' : 'Missing'
+      });
+      return res.status(500).json({ message: 'Exam data is incomplete' });
+    }
+
+    // Create result
+    const result = new Result({
+      student: studentId,
+      exam: examId,
+      teacher: exam.teacher._id,
+      course: exam.course._id,
+      answers: formattedAnswers,
+      totalMarks,
+      marksObtained,
+      percentage,
+      status,
+      submittedAt: new Date()
+    });
+
+    console.log('Saving result:', {
+      studentId,
+      examId,
+      marksObtained,
+      totalMarks,
+      percentage: percentage.toFixed(2),
+      status
+    });
+    await result.save();
+
+    res.json({
+      message: 'Exam submitted successfully',
+      score: percentage.toFixed(2)
+    });
+  } catch (error) {
+    console.error('Error submitting exam:', {
+      message: error.message,
+      stack: error.stack,
+      examId,
+      studentId
+    });
+    res.status(500).json({ message: 'Server error while submitting exam' });
+  }
+};
+
+exports.getResults = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    console.log('Fetching results for student:', studentId);
+
+    const results = await Result.find({ student: studentId })
+      .populate({
+        path: 'exam',
+        select: 'title course totalMarks',
+        populate: {
+          path: 'course',
+          select: 'name'
+        }
+      })
+      .sort({ submittedAt: -1 })
+      .lean();
+
+    console.log(`Found ${results.length} results for student ${studentId}`);
+    
+    if (results.length > 0) {
+      console.log('First result:', {
+        id: results[0]._id,
+        examTitle: results[0].exam?.title || 'N/A',
+        courseName: results[0].exam?.course?.name || 'N/A',
+        percentage: results[0].percentage,
+        status: results[0].status
+      });
+    }
+
+    // Format results for frontend
+    const formattedResults = results.map(result => ({
+      _id: result._id,
+      exam: {
+        title: result.exam?.title || 'N/A',
+        course: {
+          name: result.exam?.course?.name || 'N/A'
+        }
+      },
+      marksObtained: result.marksObtained || 0,
+      totalMarks: result.totalMarks || 0,
+      percentage: result.percentage || 0,
+      status: result.status || 'N/A',
+      submittedAt: result.submittedAt || null
+    }));
+
+    res.json(formattedResults);
+  } catch (error) {
+    console.error('Error getting results:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 exports.getEnrolledCourses = async (req, res) => {
   try {
@@ -514,7 +584,7 @@ exports.getAvailableCourses = async (req, res) => {
     const student = await User.findById(req.user._id).populate('enrolledTeacher', 'name email profilePicture');
     if (!student) {
       console.warn('getAvailableCourses - Student not found:', req.user._id);
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status姿勢(404).json({ message: 'Student not found' });
     }
 
     if (!student.enrolledTeacher || !mongoose.isValidObjectId(student.enrolledTeacher._id)) {
