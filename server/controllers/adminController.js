@@ -104,12 +104,34 @@ exports.getUserDetails = async (req, res) => {
 // Get all exam results
 exports.getAllResults = async (req, res) => {
     try {
+        console.log('Fetching all exam results');
         const results = await Result.find()
             .populate('student', 'name email')
-            .populate('exam', 'title course')
-            .populate('course', 'name')
-            .sort({ submittedAt: -1 });
-        
+            .populate({
+                path: 'exam',
+                select: 'title course',
+                populate: {
+                    path: 'course',
+                    select: 'name'
+                }
+            })
+            .sort({ submittedAt: -1 })
+            .lean();
+
+        console.log(`Found ${results.length} results`);
+        if (results.length > 0) {
+            console.log('First result raw data:', JSON.stringify(results[0], null, 2));
+            console.log('First result formatted:', {
+                id: results[0]._id,
+                studentName: results[0].student?.name || 'Unknown',
+                examTitle: results[0].exam?.title || 'Unknown',
+                courseName: results[0].exam?.course?.name || 'Unknown',
+                courseId: results[0].exam?.course?._id || 'Unknown',
+                percentage: results[0].percentage,
+                status: results[0].status
+            });
+        }
+
         res.json(results);
     } catch (error) {
         console.error('Error fetching all results:', error);
@@ -124,11 +146,31 @@ exports.getStudentResults = async (req, res) => {
         console.log('Fetching results for student:', studentId);
         
         const results = await Result.find({ student: studentId })
-            .populate('exam', 'title course')
-            .populate('course', 'name')
-            .sort({ submittedAt: -1 });
+            .populate('student', 'name email')
+            .populate({
+                path: 'exam',
+                select: 'title course',
+                populate: {
+                    path: 'course',
+                    select: 'name'
+                }
+            })
+            .sort({ submittedAt: -1 })
+            .lean();
         
         console.log(`Found ${results.length} results for student ${studentId}`);
+        if (results.length > 0) {
+            console.log('First result raw data:', JSON.stringify(results[0], null, 2));
+            console.log('First result formatted:', {
+                id: results[0]._id,
+                studentName: results[0].student?.name || 'Unknown',
+                examTitle: results[0].exam?.title || 'Unknown',
+                courseName: results[0].exam?.course?.name || 'Unknown',
+                courseId: results[0].exam?.course?._id || 'Unknown',
+                percentage: results[0].percentage,
+                status: results[0].status
+            });
+        }
         
         res.json(results);
     } catch (error) {
@@ -145,10 +187,30 @@ exports.getExamResults = async (req, res) => {
         
         const results = await Result.find({ exam: examId })
             .populate('student', 'name email')
-            .populate('course', 'name')
-            .sort({ submittedAt: -1 });
+            .populate({
+                path: 'exam',
+                select: 'title course',
+                populate: {
+                    path: 'course',
+                    select: 'name'
+                }
+            })
+            .sort({ submittedAt: -1 })
+            .lean();
         
         console.log(`Found ${results.length} results for exam ${examId}`);
+        if (results.length > 0) {
+            console.log('First result raw data:', JSON.stringify(results[0], null, 2));
+            console.log('First result formatted:', {
+                id: results[0]._id,
+                studentName: results[0].student?.name || 'Unknown',
+                examTitle: results[0].exam?.title || 'Unknown',
+                courseName: results[0].exam?.course?.name || 'Unknown',
+                courseId: results[0].exam?.course?._id || 'Unknown',
+                percentage: results[0].percentage,
+                status: results[0].status
+            });
+        }
         
         res.json(results);
     } catch (error) {
@@ -156,7 +218,6 @@ exports.getExamResults = async (req, res) => {
         res.status(500).json({ message: 'Error fetching exam results', error: error.message });
     }
 };
-
 // Update a result (admin review/correction)
 exports.updateResult = async (req, res) => {
     try {
@@ -218,4 +279,4 @@ exports.getExamDetails = async (req, res) => {
         console.error('Error fetching exam details:', error);
         res.status(500).json({ message: 'Error fetching exam details', error: error.message });
     }
-}; 
+};
