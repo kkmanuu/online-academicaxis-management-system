@@ -193,6 +193,7 @@ exports.getExamResults = async (req, res) => {
                 populate: {
                     path: 'course',
                     select: 'name'
+                    
                 }
             })
             .sort({ submittedAt: -1 })
