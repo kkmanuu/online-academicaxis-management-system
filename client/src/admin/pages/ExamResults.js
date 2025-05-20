@@ -61,6 +61,7 @@ const ExamResults = () => {
 
   const fetchAllResults = async () => {
     try {
+      setLoading(true);
       const response = await axios.get('http://localhost:5000/api/admin/results', {
         headers: getAuthHeader()
       });
@@ -118,12 +119,12 @@ const ExamResults = () => {
   const filteredResults = results.filter(result => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = (
-      (result.student && result.student.name && result.student.name.toLowerCase().includes(searchLower)) ||
-      (result.exam && result.exam.title && result.exam.title.toLowerCase().includes(searchLower)) ||
-      (result.exam && result.exam.course && result.exam.course.name && result.exam.course.name.toLowerCase().includes(searchLower))
+      (result.student?.name?.toLowerCase().includes(searchLower)) ||
+      (result.exam?.title?.toLowerCase().includes(searchLower)) ||
+      (result.exam?.course?.name?.toLowerCase().includes(searchLower))
     );
     
-    const matchesExam = !selectedExam || (result.exam && result.exam._id === selectedExam);
+    const matchesExam = !selectedExam || (result.exam?._id === selectedExam);
     
     return matchesSearch && matchesExam;
   });
@@ -207,18 +208,20 @@ const ExamResults = () => {
             <TableBody>
               {filteredResults.map((result) => (
                 <TableRow key={result._id}>
-                  <TableCell>{result.student ? result.student.name : 'Unknown'}</TableCell>
-                  <TableCell>{result.exam ? result.exam.title : 'Unknown'}</TableCell>
-                  <TableCell>{result.exam && result.exam.course ? result.exam.course.name : 'Unknown'}</TableCell>
-                  <TableCell>{result.percentage.toFixed(2)}%</TableCell>
+                  <TableCell>{result.student?.name || 'Unknown'}</TableCell>
+                  <TableCell>{result.exam?.title || 'Unknown'}</TableCell>
+                  <TableCell>{result.exam?.course?.name || 'Unknown'}</TableCell>
+                  <TableCell>{(result.percentage || 0).toFixed(2)}%</TableCell>
                   <TableCell>
                     <Chip 
-                      label={result.status} 
+                      label={result.status || 'Unknown'} 
                       color={result.status === 'pass' ? 'success' : 'error'} 
                     />
                   </TableCell>
                   <TableCell>
-                    {new Date(result.submittedAt).toLocaleDateString()} {new Date(result.submittedAt).toLocaleTimeString()}
+                    {result.submittedAt ? 
+                      `${new Date(result.submittedAt).toLocaleDateString()} ${new Date(result.submittedAt).toLocaleTimeString()}` : 
+                      'Unknown'}
                   </TableCell>
                   <TableCell>
                     <IconButton onClick={() => handleViewDetails(result)} color="primary">
@@ -242,22 +245,24 @@ const ExamResults = () => {
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12}>
                 <Typography variant="h6">Student Information</Typography>
-                <Typography>Name: {selectedResult.student ? selectedResult.student.name : 'Unknown'}</Typography>
-                <Typography>Email: {selectedResult.student ? selectedResult.student.email : 'Unknown'}</Typography>
+                <Typography>Name: {selectedResult.student?.name || 'Unknown'}</Typography>
+                <Typography>Email: {selectedResult.student?.email || 'Unknown'}</Typography>
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="h6">Exam Information</Typography>
-                <Typography>Title: {selectedResult.exam ? selectedResult.exam.title : 'Unknown'}</Typography>
-                <Typography>Course: {selectedResult.exam && selectedResult.exam.course ? selectedResult.exam.course.name : 'Unknown'}</Typography>
-                <Typography>Teacher: {selectedResult.exam && selectedResult.exam.teacher ? selectedResult.exam.teacher.name : 'Unknown'}</Typography>
+                <Typography>Title: {selectedResult.exam?.title || 'Unknown'}</Typography>
+                <Typography>Course: {selectedResult.exam?.course?.name || 'Unknown'}</Typography>
+                <Typography>Teacher: {selectedResult.exam?.teacher?.name || 'Unknown'}</Typography>
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="h6">Result Information</Typography>
-                <Typography>Total Marks: {selectedResult.totalMarks}</Typography>
-                <Typography>Marks Obtained: {selectedResult.marksObtained}</Typography>
-                <Typography>Percentage: {selectedResult.percentage.toFixed(2)}%</Typography>
-                <Typography>Status: {selectedResult.status}</Typography>
-                <Typography>Submitted On: {new Date(selectedResult.submittedAt).toLocaleDateString()} {new Date(selectedResult.submittedAt).toLocaleTimeString()}</Typography>
+                <Typography>Total Marks: {selectedResult.totalMarks || 0}</Typography>
+                <Typography>Marks Obtained: {selectedResult.marksObtained || 0}</Typography>
+                <Typography>Percentage: {(selectedResult.percentage || 0).toFixed(2)}%</Typography>
+                <Typography>Status: {selectedResult.status || 'Unknown'}</Typography>
+                <Typography>Submitted On: {selectedResult.submittedAt ? 
+                  `${new Date(selectedResult.submittedAt).toLocaleDateString()} ${new Date(selectedResult.submittedAt).toLocaleTimeString()}` : 
+                  'Unknown'}</Typography>
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="h6">Answer Details</Typography>
@@ -283,7 +288,7 @@ const ExamResults = () => {
                               size="small"
                             />
                           </TableCell>
-                          <TableCell>{answer.marksObtained}</TableCell>
+                          <TableCell>{answer.marksObtained || 0}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -301,4 +306,4 @@ const ExamResults = () => {
   );
 };
 
-export default ExamResults; 
+export default ExamResults;
