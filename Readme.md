@@ -1,5 +1,3 @@
-:
-
 🎓 **Online AcademicAxis Management System**
 
 
@@ -74,7 +72,7 @@ project/
 
 1. Clone the repository
 ```bash
-git clone https://github.com/kkmanuu/online-academicaxis-management-system/
+git clone https://github.com/kkmanuu/online-academicaxis-management-system
 cd online-examination-system
 ```
 
@@ -148,7 +146,7 @@ The application will be available at:
 - *Emmanuel Kipngeno*
 - GitHub: [@githubhandle](https://github.com/kkmanuu)
 - Twitter: [@twitterhandle](https://twitter.com/kkmanuu)
-- LinkedIn: [LinkedIn](https://www.linkedin.com/in/emmanuel-kipngeno-879370242/)
+- LinkedIn: [LinkedIn](https://www.linkedin.com/in/emmanuel-kipngeno/)
 ## Contributing
 
 1. Fork the repository
