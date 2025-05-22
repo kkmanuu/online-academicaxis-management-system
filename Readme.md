@@ -139,7 +139,7 @@ The application will be available at:
 - GET `/api/admin/users` - Get all users
 - PUT `/api/admin/users/:id/block` - Toggle user block status
 - GET `/api/admin/students` - Get all students
-- GET `/api/admin/results` - Get all exam results
+- GET `/api/admin/results` - Get all exam results 
 
 
 ## : Authors <a name="authors"></a>
