@@ -11,12 +11,13 @@ const {
     updateResult,
     getAllExams,
     getExamDetails,
-    getAllStudents
+    getAllStudents,     
+    addUser
 } = require('../controllers/adminController');
 const { auth, checkRole } = require('../middleware/auth');
 
 // All routes require authentication and admin role
-router.use(auth, checkRole(['admin']));
+router.post('/users', auth, checkRole(['admin']), addUser);
 
 // Get all users
 router.get('/users', getAllUsers);
