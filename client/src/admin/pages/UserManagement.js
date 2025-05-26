@@ -40,11 +40,13 @@ const UserManagement = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [openDialog, setOpenDialog] = useState(false);
+  const [dialogMode, setDialogMode] = useState('edit'); // 'edit' or 'add'
   const [selectedUser, setSelectedUser] = useState(null);
-  const [editForm, setEditForm] = useState({
+  const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: ''
+    role: '',
+    password: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -62,7 +64,6 @@ const UserManagement = () => {
       });
       setUsers(response.data);
     } catch (error) {
-      console.error('Error fetching users:', error);
       setError('Failed to load users. Please try again.');
     }
   };
@@ -78,11 +79,25 @@ const UserManagement = () => {
 
   const handleEdit = (user) => {
     setSelectedUser(user);
-    setEditForm({
+    setFormData({
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
+      password: ''
     });
+    setDialogMode('edit');
+    setOpenDialog(true);
+  };
+
+  const handleAdd = () => {
+    setSelectedUser(null);
+    setFormData({
+      name: '',
+      email: '',
+      role: 'student',
+      password: ''
+    });
+    setDialogMode('add');
     setOpenDialog(true);
   };
 
@@ -95,7 +110,6 @@ const UserManagement = () => {
         setSuccess('User deleted successfully');
         fetchUsers();
       } catch (error) {
-        console.error('Error deleting user:', error);
         setError('Failed to delete user. Please try again.');
       }
     }
@@ -111,24 +125,31 @@ const UserManagement = () => {
       setSuccess(`User ${isBlocked ? 'unblocked' : 'blocked'} successfully`);
       fetchUsers();
     } catch (error) {
-      console.error('Error updating user status:', error);
       setError('Failed to update user status. Please try again.');
     }
   };
 
   const handleSave = async () => {
     try {
-      await axios.put(
-        `http://localhost:5000/api/admin/users/${selectedUser._id}`,
-        editForm,
-        { headers: getAuthHeader() }
-      );
+      if (dialogMode === 'edit') {
+        await axios.put(
+          `http://localhost:5000/api/admin/users/${selectedUser._id}`,
+          formData,
+          { headers: getAuthHeader() }
+        );
+        setSuccess('User updated successfully');
+      } else {
+        await axios.post(
+          'http://localhost:5000/api/admin/users',
+          formData,
+          { headers: getAuthHeader() }
+        );
+        setSuccess('User created successfully');
+      }
       setOpenDialog(false);
-      setSuccess('User updated successfully');
       fetchUsers();
     } catch (error) {
-      console.error('Error updating user:', error);
-      setError('Failed to update user. Please try again.');
+      setError(dialogMode === 'edit' ? 'Failed to update user' : 'Failed to create user');
     }
   };
 
@@ -148,16 +169,21 @@ const UserManagement = () => {
       <Typography variant="h4" gutterBottom>
         User Management
       </Typography>
-
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleAdd}
+        sx={{ mb: 2 }}
+      >
+        Add New User
+      </Button>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-
       <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 2 }}>
         <Tab label="Teachers" />
         <Tab label="Students" />
         <Tab label="All Users" />
       </Tabs>
-
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -216,30 +242,40 @@ const UserManagement = () => {
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </TableContainer>
-
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>Edit User</DialogTitle>
+        <DialogTitle>{dialogMode === 'edit' ? 'Edit User' : 'Add User'}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             margin="dense"
             label="Name"
             fullWidth
-            value={editForm.name}
-            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           />
           <TextField
             margin="dense"
             label="Email"
+            type="email"
             fullWidth
-            value={editForm.email}
-            onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           />
+          {dialogMode === 'add' && (
+            <TextField
+              margin="dense"
+              label="Password"
+              type="password"
+              fullWidth
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            />
+          )}
           <FormControl fullWidth margin="dense">
             <InputLabel>Role</InputLabel>
             <Select
-              value={editForm.role}
-              onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
             >
               <MenuItem value="student">Student</MenuItem>
               <MenuItem value="teacher">Teacher</MenuItem>
@@ -248,11 +284,11 @@ const UserManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleSave} color="primary">Save</Button>
+          <Button onClick={handleSave} color="primary">{dialogMode === 'edit' ? 'Save' : 'Create'}</Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
 };
 
-export default UserManagement; 
+export default UserManagement;
