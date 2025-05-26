@@ -213,6 +213,7 @@ const ExamInterface = () => {
       });
 
       console.log('Exam submission response:', response.data);
+      
       alert(`Exam submitted successfully! Your score: ${response.data.score}%`);
       navigate('/student/results');
     } catch (error) {
