@@ -3,7 +3,59 @@ const Course = require('../models/Course');
 const Result = require('../models/Result');
 const Exam = require('../models/Exam');
 
-// Get all students
+// Add a new user
+exports.addUser = async (req, res) => {
+    try {
+      const { name, email, password, role } = req.body;
+  
+      // Validate input
+      if (!name || !email || !password || !role) {
+        return res.status(400).json({ message: 'All fields are required' });
+      }
+  
+      if (password.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+      }
+  
+      // Check if user already exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ message: 'User already exists' });
+      }
+  
+      // Prevent multiple admins
+      if (role === 'admin') {
+        const existingAdmin = await User.findOne({ role: 'admin' });
+        if (existingAdmin) {
+          return res.status(400).json({ message: 'Admin account already exists' });
+        }
+      }
+  
+      // Create new user
+      const user = new User({
+        name,
+        email,
+        password,
+        role
+      });
+  
+      await user.save();
+  
+      res.status(201).json({
+        message: 'User created successfully',
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isBlocked: user.isBlocked
+        }
+      });
+    } catch (error) {
+      console.error('Error adding user:', error);
+      res.status(500).json({ message: 'Error adding user', error: error.message });
+    }
+  };
 exports.getAllStudents = async (req, res) => {
     try {
         const students = await User.find({ role: 'student' })
