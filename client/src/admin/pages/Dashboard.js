@@ -165,7 +165,8 @@ const AdminDashboard = () => {
           flexGrow: 1,
           p: 2,
           width: { sm: `calc(100% - 240px)` },
-          ml: { sm: '240px' },
+          ml: { sm: 0 },
+
           background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
         }}
       >
