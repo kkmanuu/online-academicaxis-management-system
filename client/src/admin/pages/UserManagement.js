@@ -166,7 +166,14 @@ const UserManagement = () => {
   });
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box
+  sx={{
+    width: '100%',
+    ml: '0px !important',  // forcibly remove margin
+    px: 2,
+  }}
+>
+
       <Typography variant="h4" gutterBottom>
         User Management
       </Typography>
