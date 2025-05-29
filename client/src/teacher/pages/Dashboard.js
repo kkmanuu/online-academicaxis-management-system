@@ -33,15 +33,16 @@ import StudentEnrollment from './StudentEnrollment';
 import CourseManagement from './CourseManagement';
 import StudentResults from './StudentResults';
 
+const drawerWidth = 240;
+
 const TeacherDashboard = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [stats, setStats] = useState({
     totalCourses: 0,
     totalExams: 0,
-    totalStudents: 0,
-    averageScore: 0
+    totalStudents: 0
   });
-  
+
   const { user, logout, getAuthHeader } = useAuth();
 
   useEffect(() => {
@@ -50,12 +51,13 @@ const TeacherDashboard = () => {
         const response = await axios.get('http://localhost:5000/api/teacher/statistics', {
           headers: getAuthHeader()
         });
-        setStats(response.data);
+        const { totalCourses, totalExams, totalStudents } = response.data;
+        setStats({ totalCourses, totalExams, totalStudents });
       } catch (error) {
         console.error('Error fetching statistics:', error);
       }
     };
-    
+
     if (user && user.role === 'teacher') {
       fetchStats();
     }
@@ -66,19 +68,24 @@ const TeacherDashboard = () => {
   };
 
   const drawer = (
-    <Box sx={{ backgroundColor: '#ffffff', height: '100%' }}>
-      <Toolbar sx={{ background: 'linear-gradient(135deg, #3f51b5 0%, #303f9f 100%)', color: '#fff' }}>
-        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
+    <Box sx={{ height: '100%' }}>
+      <Toolbar
+        sx={{
+          background: 'linear-gradient(135deg, #3f51b5 0%, #303f9f 100%)',
+          color: '#fff'
+        }}
+      >
+        <Typography variant="h6" noWrap component="div" fontWeight="bold">
           EduConnect
         </Typography>
       </Toolbar>
       <Divider />
       <List>
         {[
-          { text: 'Dashboard', icon: <DashboardIcon sx={{ color: '#3f51b5' }} />, to: '/teacher' },
-          { text: 'Exam Management', icon: <ExamIcon sx={{ color: '#3f51b5' }} />, to: '/teacher/exams' },
-          { text: 'Course Management', icon: <CourseIcon sx={{ color: '#3f51b5' }} />, to: '/teacher/courses' },
-          { text: 'Student Results', icon: <ResultsIcon sx={{ color: '#3f51b5' }} />, to: '/teacher/results' }
+          { text: 'Dashboard', icon: <DashboardIcon />, to: '/teacher' },
+          { text: 'Exam Management', icon: <ExamIcon />, to: '/teacher/exams' },
+          { text: 'Course Management', icon: <CourseIcon />, to: '/teacher/courses' },
+          { text: 'Student Results', icon: <ResultsIcon />, to: '/teacher/results' }
         ].map((item) => (
           <ListItem
             button
@@ -87,14 +94,14 @@ const TeacherDashboard = () => {
             key={item.text}
             sx={{
               '&:hover': {
-                backgroundColor: '#f5f5f5',
-                '& .MuiListItemIcon-root': { color: '#303f9f' },
-                '& .MuiListItemText-primary': { color: '#303f9f' }
-              }
+                backgroundColor: '#e8eaf6',
+              },
+              '& .MuiListItemIcon-root': { color: '#3f51b5' },
+              '& .MuiListItemText-primary': { fontWeight: 500, color: '#1a237e' }
             }}
           >
             <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} sx={{ color: '#1a237e' }} />
+            <ListItemText primary={item.text} />
           </ListItem>
         ))}
       </List>
@@ -105,16 +112,16 @@ const TeacherDashboard = () => {
           onClick={handleLogout}
           sx={{
             '&:hover': {
-              backgroundColor: '#f5f5f5',
-              '& .MuiListItemIcon-root': { color: '#303f9f' },
-              '& .MuiListItemText-primary': { color: '#303f9f' }
-            }
+              backgroundColor: '#e8eaf6',
+            },
+            '& .MuiListItemIcon-root': { color: '#3f51b5' },
+            '& .MuiListItemText-primary': { fontWeight: 500, color: '#1a237e' }
           }}
         >
           <ListItemIcon>
-            <LogoutIcon sx={{ color: '#3f51b5' }} />
+            <LogoutIcon />
           </ListItemIcon>
-          <ListItemText primary="Logout" sx={{ color: '#1a237e' }} />
+          <ListItemText primary="Logout" />
         </ListItem>
       </List>
     </Box>
@@ -125,111 +132,112 @@ const TeacherDashboard = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', backgroundColor: '#f5f7fa', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', backgroundColor: '#f4f6f8', minHeight: '100vh' }}>
       <CssBaseline />
       <AppBar
         position="fixed"
         sx={{
           zIndex: (theme) => theme.zIndex.drawer + 1,
           background: 'linear-gradient(135deg, #3f51b5 0%, #303f9f 100%)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+          boxShadow: 3
         }}
       >
         <Toolbar>
           <IconButton
             color="inherit"
-            aria-label="open drawer"
             edge="start"
             onClick={() => setDrawerOpen(!drawerOpen)}
             sx={{ mr: 2 }}
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="h6" component="div" fontWeight="bold">
             EduConnect Dashboard - Teacher
           </Typography>
         </Toolbar>
       </AppBar>
+
+      {/* Permanent drawer */}
       <Drawer
         variant="permanent"
         sx={{
-          width: 240,
+          width: drawerWidth,
           flexShrink: 0,
+          display: { xs: 'none', sm: 'block' },
           '& .MuiDrawer-paper': {
-            width: 240,
+            width: drawerWidth,
             boxSizing: 'border-box',
-            backgroundColor: 'transparent'
-          },
-          display: { xs: 'none', sm: 'block' }
+            backgroundColor: '#fff'
+          }
         }}
       >
         {drawer}
       </Drawer>
+
+      {/* Temporary drawer for mobile */}
       <Drawer
         variant="temporary"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         sx={{
-          width: 240,
-          flexShrink: 0,
+          display: { xs: 'block', sm: 'none' },
           '& .MuiDrawer-paper': {
-            width: 240,
+            width: drawerWidth,
             boxSizing: 'border-box',
-            backgroundColor: 'transparent'
-          },
-          display: { xs: 'block', sm: 'none' }
+            backgroundColor: '#fff'
+          }
         }}
       >
         {drawer}
       </Drawer>
+
+      {/* Main content */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 2,
-          // width: { sm: `calc(100% - 240px)` },
-          // ml: { sm: '240px' },
-          background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+          p: 3,
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          mt: 8
         }}
       >
-        <Toolbar />
         <Routes>
           <Route path="/" element={
-            <Container maxWidth="lg" sx={{ mt: 2, mb: 3 }}>
+            <Container maxWidth="lg">
               <Typography
                 variant="h4"
                 gutterBottom
-                sx={{ fontWeight: 'bold', color: '#1a237e', mb: 3 }}
+                fontWeight="bold"
+                sx={{ color: '#1a237e', mb: 4 }}
               >
                 Welcome, {user.name || 'Teacher'}
               </Typography>
-              <Grid container spacing={2}>
+              <Grid container spacing={3}>
                 {[
-                  { title: 'Total Courses', value: stats.totalCourses || 0 },
-                  { title: 'Total Exams', value: stats.totalExams || 0 },
-                  { title: 'Total Students', value: stats.totalStudents || 0 },
-                  { title: 'Average Score', value: stats.averageScore ? `${stats.averageScore.toFixed(2)}%` : 'N/A' }
-                ].map((stat, index) => (
-                  <Grid item xs={12} sm={6} lg={3} key={index}>
+                  { title: 'Total Courses', value: stats.totalCourses },
+                  { title: 'Total Exams', value: stats.totalExams },
+                  { title: 'Total Students', value: stats.totalStudents }
+                ].map((stat, i) => (
+                  <Grid item xs={12} sm={6} md={4} key={i}>
                     <Paper
+                      elevation={3}
                       sx={{
-                        p: 2,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        height: 120,
+                        p: 3,
                         borderRadius: 2,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        textAlign: 'center',
+                        background: '#fff',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                        transition: 'transform 0.3s, box-shadow 0.3s',
                         '&:hover': {
                           transform: 'translateY(-4px)',
                           boxShadow: '0 8px 30px rgba(0,0,0,0.15)'
                         }
                       }}
                     >
-                      <Typography component="h2" variant="h6" sx={{ color: '#3f51b5', mb: 1 }}>
+                      <Typography variant="subtitle1" sx={{ color: '#3f51b5', mb: 1 }}>
                         {stat.title}
                       </Typography>
-                      <Typography component="p" variant="h4" sx={{ color: '#1a237e' }}>
+                      <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a237e' }}>
                         {stat.value}
                       </Typography>
                     </Paper>
