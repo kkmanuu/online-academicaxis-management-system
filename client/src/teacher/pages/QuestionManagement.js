@@ -197,11 +197,23 @@ const QuestionManagement = () => {
     }
   };
 
+
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box display="flex" justifyContent="space:before" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
-          Question Management
+    <Container maxWidth="md" sx={{ mt: 5, mb: 5 }}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+        p={2}
+        sx={{
+          backgroundColor: '#f5f5f5',
+          borderRadius: 2,
+          boxShadow: 1,
+        }}
+      >
+        <Typography variant="h4" fontWeight="bold">
+          Manage Questions
         </Typography>
         <Button
           variant="contained"
@@ -219,49 +231,71 @@ const QuestionManagement = () => {
         </Alert>
       )}
 
-      <Paper>
-        <List>
-          {questions.map((question, index) => (
-            <ListItem key={question._id || index}>
-              <ListItemText
-                primary={question.question}
-                secondary={
-                  <>
-                    <Typography component="span" variant="body2" color="text.primary">
-                      Options:
+      <Paper sx={{ p: 2 }}>
+        {questions.length === 0 ? (
+          <Typography variant="body1" align="center" sx={{ py: 3 }}>
+            No questions added yet.
+          </Typography>
+        ) : (
+          <List>
+            {questions.map((question, index) => (
+              <ListItem
+                key={question._id || index}
+                sx={{
+                  mb: 1,
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 2,
+                  padding: 2,
+                  backgroundColor: '#fafafa',
+                }}
+                divider
+              >
+                <ListItemText
+                  primary={
+                    <Typography variant="subtitle1" fontWeight="medium">
+                      {index + 1}. {question.question}
                     </Typography>
-                    {' '}
-                    {question.options.map((option, i) => (
-                      <Typography key={i} component="span" variant="body2">
-                        {String.fromCharCode(65 + i)}. {option}{' '}
-                      </Typography>
-                    ))}
-                    <br />
-                    <Typography component="span" variant="body2" color="text.primary">
-                      Correct Answer: {String.fromCharCode(65 + question.correctAnswer)}
-                    </Typography>
-                    {' | '}
-                    <Typography component="span" variant="body2" color="text.primary">
-                      Marks: {question.marks}
-                    </Typography>
-                  </>
-                }
-              />
-              <ListItemSecondaryAction>
-                <IconButton onClick={() => handleOpenDialog(question)} color="primary">
-                  <EditIcon />
-                </IconButton>
-                <IconButton onClick={() => handleDelete(question._id)} color="error">
-                  <DeleteIcon />
-                </IconButton>
-              </ListItemSecondaryAction>
-            </ListItem>
-          ))}
-        </List>
+                  }
+                  secondary={
+                    <>
+                      <Box mt={1}>
+                        {question.options.map((option, i) => (
+                          <Typography
+                            key={i}
+                            component="span"
+                            variant="body2"
+                            display="block"
+                          >
+                            {String.fromCharCode(65 + i)}. {option}
+                          </Typography>
+                        ))}
+                        <Typography variant="body2" mt={1}>
+                          <strong>Correct Answer:</strong>{' '}
+                          {String.fromCharCode(65 + question.correctAnswer)} |{' '}
+                          <strong>Marks:</strong> {question.marks}
+                        </Typography>
+                      </Box>
+                    </>
+                  }
+                />
+                <ListItemSecondaryAction>
+                  <IconButton onClick={() => handleOpenDialog(question)} color="primary">
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton onClick={() => handleDelete(question._id)} color="error">
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItemSecondaryAction>
+              </ListItem>
+            ))}
+          </List>
+        )}
       </Paper>
 
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>{selectedQuestion ? 'Edit Question' : 'Add New Question'}</DialogTitle>
+        <DialogTitle>
+          {selectedQuestion ? 'Edit Question' : 'Add New Question'}
+        </DialogTitle>
         <DialogContent>
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -273,7 +307,7 @@ const QuestionManagement = () => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Question"
+                  label="Question Text"
                   name="question"
                   value={formData.question}
                   onChange={handleInputChange}
@@ -283,7 +317,7 @@ const QuestionManagement = () => {
                 />
               </Grid>
               {formData.options.map((option, index) => (
-                <Grid item xs={12} key={index}>
+                <Grid item xs={12} sm={6} key={index}>
                   <TextField
                     fullWidth
                     label={`Option ${String.fromCharCode(65 + index)}`}
@@ -293,14 +327,13 @@ const QuestionManagement = () => {
                   />
                 </Grid>
               ))}
-              <Grid item xs={6}>
-                <FormControl fullWidth>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth required>
                   <InputLabel>Correct Answer</InputLabel>
                   <Select
                     name="correctAnswer"
                     value={formData.correctAnswer}
                     onChange={handleInputChange}
-                    required
                   >
                     {formData.options.map((_, index) => (
                       <MenuItem key={index} value={index}>
@@ -310,7 +343,7 @@ const QuestionManagement = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   label="Marks"
@@ -325,7 +358,7 @@ const QuestionManagement = () => {
             </Grid>
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button onClick={handleSubmit} variant="contained" color="primary">
             {selectedQuestion ? 'Update' : 'Add'}
