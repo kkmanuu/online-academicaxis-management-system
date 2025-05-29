@@ -163,7 +163,7 @@ const CourseEnrollment = () => {
         }}
       >
         <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold', color: '#1a237e' }}>
-          📚 Select Your Teacher
+           Select Your Teacher
         </Typography>
         <FormControl fullWidth>
           <InputLabel id="teacher-select-label">Teacher</InputLabel>
@@ -209,7 +209,7 @@ const CourseEnrollment = () => {
           }}
         >
           <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold', color: '#1a237e' }}>
-            👨‍🏫 My Assigned Teacher
+             My Assigned Teacher
           </Typography>
           <Box display="flex" alignItems="center">
             <Avatar
@@ -232,7 +232,7 @@ const CourseEnrollment = () => {
 
       {/* AVAILABLE COURSES */}
       <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold', color: '#1a237e' }}>
-        🧠 Available Courses
+        Available Courses
       </Typography>
       <Grid container spacing={2}>
         {availableCourses.length > 0 ? (
@@ -295,7 +295,7 @@ const CourseEnrollment = () => {
 
       {/* ENROLLED COURSES */}
       <Typography variant="h5" sx={{ mt: 4, mb: 2, fontWeight: 'bold', color: '#1a237e' }}>
-        🎓 My Enrolled Courses
+       My Enrolled Courses
       </Typography>
       <Grid container spacing={2}>
         {enrolledCourses.length > 0 ? (
