@@ -140,6 +140,7 @@ const StudentResults = () => {
             </TableHead>
             <TableBody>
               {filteredResults.map((result) => (
+                
                 <TableRow key={result._id}>
                   <TableCell>{result.student ? result.student.name : 'Unknown'}</TableCell>
                   <TableCell>{result.exam ? result.exam.title : 'Unknown'}</TableCell>
