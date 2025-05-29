@@ -116,19 +116,19 @@ const UserManagement = () => {
     }
   };
 
-  const handleBlock = async (userId, isBlocked) => {
-    try {
-      await axios.put(
-        `http://localhost:5000/api/admin/users/${userId}/block`,
-        {},
-        { headers: getAuthHeader() }
-      );
-      setSuccess(`User ${isBlocked ? 'unblocked' : 'blocked'} successfully`);
-      fetchUsers();
-    } catch (error) {
-      setError('Failed to update user status. Please try again.');
-    }
-  };
+const handleBlock = async (userId, isBlocked) => {
+  try {
+    await axios.put(
+      `http://localhost:5000/api/admin/users/${userId}/block`,
+      {},
+      { headers: getAuthHeader() }
+    );
+    setSuccess(`User ${isBlocked ? 'unblocked' : 'blocked'} successfully`);
+    fetchUsers();
+  } catch (error) {
+    setError('Failed to update user status. Please try again.');
+  }
+};
 
   const handleSave = async () => {
     try {
