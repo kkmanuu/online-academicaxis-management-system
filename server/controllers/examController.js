@@ -238,6 +238,42 @@ exports.deleteQuestion = async (req, res) => {
     res.status(500).json({ message: 'Error deleting question', error: error.message });
   }
 };
+exports.getTeacherResults = async (req, res) => {
+  try {
+    console.log('Fetching all results for teacher:', req.user._id);
+
+    const exams = await Exam.find({ teacher: req.user._id }, '_id');
+    const examIds = exams.map(exam => exam._id);
+
+    const results = await Result.find({ exam: { $in: examIds } })
+      .populate('student', 'name email')
+      .populate({
+        path: 'exam',
+        select: 'title course',
+        populate: { path: 'course', select: 'name' }
+      })
+      .sort({ submittedAt: -1 })
+      .lean();
+
+    // Fallback for missing course
+    results.forEach(result => {
+      if (!result.exam?.course) {
+        result.exam = result.exam || {};
+        result.exam.course = { name: 'Course Not Assigned' };
+      }
+    });
+
+    console.log(`Found ${results.length} results for teacher ${req.user._id}`);
+    if (results.length > 0) {
+      console.log('First result raw data:', JSON.stringify(results[0], null, 2));
+    }
+
+    res.json(results);
+  } catch (error) {
+    console.error('Error fetching teacher results:', error);
+    res.status(500).json({ message: 'Error fetching results', error: error.message });
+  }
+};
 
 // Enroll students in an exam
 exports.enrollStudents = async (req, res) => {
