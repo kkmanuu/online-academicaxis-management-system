@@ -32,21 +32,23 @@ import axios from 'axios';
 import { useAuth } from '../../shared/context/AuthContext';
 
 const ExamResults = () => {
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedResult, setSelectedResult] = useState(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [exams, setExams] = useState([]);
-  const [selectedExam, setSelectedExam] = useState('');
-  const { getAuthHeader } = useAuth();
+  const [results, setResults] = useState([]); // Stores fetched exam results
+  const [loading, setLoading] = useState(true); // Controls loading spinner
+  const [error, setError] = useState(''); // Stores any error message
+  const [searchTerm, setSearchTerm] = useState(''); // Stores search input
+  const [selectedResult, setSelectedResult] = useState(null); // Stores result selected for detail view
+  const [openDialog, setOpenDialog] = useState(false); // Controls result detail dialog
+  const [exams, setExams] = useState([]); // Stores list of all exams
+  const [selectedExam, setSelectedExam] = useState(''); // Currently selected exam filter
+  const { getAuthHeader } = useAuth(); // Authentication headers
 
+  // Fetch exams and all results on component mount
   useEffect(() => {
     fetchExams();
     fetchAllResults();
   }, []);
 
+  // Fetch all exams
   const fetchExams = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/admin/exams', {
@@ -58,6 +60,7 @@ const ExamResults = () => {
     }
   };
 
+  // Fetch all results
   const fetchAllResults = async () => {
     try {
       setLoading(true);
@@ -73,6 +76,7 @@ const ExamResults = () => {
     }
   };
 
+  // Fetch results for a specific exam
   const fetchExamResults = async (examId) => {
     try {
       setLoading(true);
@@ -92,6 +96,7 @@ const ExamResults = () => {
     setSearchTerm(event.target.value);
   };
 
+  // Handle change of selected exam
   const handleExamChange = (event) => {
     const examId = event.target.value;
     setSelectedExam(examId);
@@ -103,25 +108,28 @@ const ExamResults = () => {
     }
   };
 
+  // Open result detail dialog
   const handleViewDetails = (result) => {
     setSelectedResult(result);
     setOpenDialog(true);
   };
 
+  // Close result detail dialog
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedResult(null);
   };
 
+  // Filter results by search term and selected exam
   const filteredResults = results.filter(result => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = (
-      (result.student?.name?.toLowerCase().includes(searchLower)) ||
-      (result.exam?.title?.toLowerCase().includes(searchLower)) ||
-      (result.exam?.course?.name?.toLowerCase().includes(searchLower))
+      result.student?.name?.toLowerCase().includes(searchLower) ||
+      result.exam?.title?.toLowerCase().includes(searchLower) ||
+      result.exam?.course?.name?.toLowerCase().includes(searchLower)
     );
 
-    const matchesExam = !selectedExam || (selectedExam === 'all') || (result.exam?._id === selectedExam);
+    const matchesExam = !selectedExam || selectedExam === 'all' || result.exam?._id === selectedExam;
 
     return matchesSearch && matchesExam;
   });
@@ -136,18 +144,7 @@ const ExamResults = () => {
 
   if (error) {
     return (
-      <Container  maxWidth={false} // disable maxWidth to control full width
-  sx={{
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
-    overflowY: 'auto',
-    bgcolor: 'background.paper',
-    p: 3,
-  }}
->
+      <Container maxWidth={false} sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', overflowY: 'auto', bgcolor: 'background.paper', p: 3 }}>
         <Alert severity="error" sx={{ fontSize: '1.1rem' }}>{error}</Alert>
       </Container>
     );
@@ -159,6 +156,7 @@ const ExamResults = () => {
         Exam Results
       </Typography>
 
+      {/* Filter Section */}
       <Paper sx={{ p: 3, mb: 4, borderRadius: 3, boxShadow: '0 3px 10px rgba(0,0,0,0.1)' }}>
         <Box display="flex" gap={3} flexWrap="wrap" alignItems="center">
           <TextField
@@ -175,12 +173,7 @@ const ExamResults = () => {
                 </InputAdornment>
               ),
             }}
-            sx={{
-              maxWidth: 500,
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-              }
-            }}
+            sx={{ maxWidth: 500, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
           />
           <FormControl sx={{ minWidth: 220 }}>
             <InputLabel id="exam-filter-label">Filter by Exam</InputLabel>
@@ -194,15 +187,14 @@ const ExamResults = () => {
             >
               <MenuItem value="all">All Exams</MenuItem>
               {exams.map((exam) => (
-                <MenuItem key={exam._id} value={exam._id}>
-                  {exam.title}
-                </MenuItem>
+                <MenuItem key={exam._id} value={exam._id}>{exam.title}</MenuItem>
               ))}
             </Select>
           </FormControl>
         </Box>
       </Paper>
 
+      {/* Results Table */}
       {filteredResults.length === 0 ? (
         <Paper sx={{ p: 4, mt: 3, borderRadius: 3, boxShadow: '0 3px 10px rgba(0,0,0,0.05)' }}>
           <Typography variant="body1" color="textSecondary" textAlign="center" fontSize="1.1rem">
@@ -277,56 +269,11 @@ const ExamResults = () => {
                 <Typography><strong>Course:</strong> {selectedResult.exam?.course?.name || 'Unknown'}</Typography>
                 <Typography><strong>Teacher:</strong> {selectedResult.exam?.teacher?.name || 'Unknown'}</Typography>
               </Grid>
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', borderBottom: '2px solid', borderColor: 'primary.main', pb: 1 }}>
-                  Result Information
-                </Typography>
-                <Typography><strong>Total Marks:</strong> {selectedResult.totalMarks || 0}</Typography>
-                <Typography><strong>Marks Obtained:</strong> {selectedResult.marksObtained || 0}</Typography>
-                <Typography><strong>Percentage:</strong> {(selectedResult.percentage || 0).toFixed(2)}%</Typography>
-                <Typography><strong>Status:</strong> {selectedResult.status || 'Unknown'}</Typography>
-                <Typography><strong>Submitted On:</strong> {selectedResult.submittedAt
-                  ? `${new Date(selectedResult.submittedAt).toLocaleDateString()} ${new Date(selectedResult.submittedAt).toLocaleTimeString()}`
-                  : 'Unknown'}</Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', borderBottom: '2px solid', borderColor: 'primary.main', pb: 1 }}>
-                  Answer Details
-                </Typography>
-                <TableContainer component={Paper} sx={{ mt: 1, boxShadow: 'none' }}>
-                  <Table size="small" aria-label="answers table">
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: 'grey.100' }}>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Question #</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Selected Answer</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Correct?</TableCell>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Marks</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {selectedResult.answers && selectedResult.answers.map((answer, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{index + 1}</TableCell>
-                          <TableCell>{answer.selectedAnswer}</TableCell>
-                          <TableCell>
-                            {answer.isCorrect ? (
-                              <Chip label="Correct" color="success" size="small" />
-                            ) : (
-                              <Chip label="Incorrect" color="error" size="small" />
-                            )}
-                          </TableCell>
-                          <TableCell>{answer.marks}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Grid>
             </Grid>
           )}
         </DialogContent>
-        <DialogActions sx={{ pr: 3, pb: 2 }}>
-          <Button onClick={handleCloseDialog} variant="contained" color="primary">
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary" variant="outlined">
             Close
           </Button>
         </DialogActions>
