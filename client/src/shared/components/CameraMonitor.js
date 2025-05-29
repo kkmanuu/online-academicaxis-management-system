@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Paper, Typography, IconButton, Alert } from '@mui/material';
+import { Box, Paper, Typography, IconButton, Alert, Button } from '@mui/material';
 import { Videocam, VideocamOff } from '@mui/icons-material';
 
-const CameraMonitor = ({ role, examId, studentId }) => {
+const CameraMonitor = ({ role, examId, studentId, onCameraStatusChange }) => {
   const [stream, setStream] = useState(null);
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [error, setError] = useState(null);
@@ -17,17 +17,23 @@ const CameraMonitor = ({ role, examId, studentId }) => {
       initializeTeacherMonitor();
     }
 
-
     return () => {
       stopCamera();
     };
   }, [role, examId, studentId]);
 
+  useEffect(() => {
+    // Notify parent component about camera status (for student role)
+    if (role === 'student' && onCameraStatusChange) {
+      onCameraStatusChange(isCameraOn);
+    }
+  }, [isCameraOn, role, onCameraStatusChange]);
+
   const initializeStudentCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        audio: true
+        audio: true,
       });
       setStream(mediaStream);
       setIsCameraOn(true);
@@ -35,7 +41,8 @@ const CameraMonitor = ({ role, examId, studentId }) => {
         videoRef.current.srcObject = mediaStream;
       }
     } catch (err) {
-      setError('Failed to access camera. Please ensure you have granted camera permissions.');
+      setError('Failed to access camera. Please ensure you have granted camera permissions and turn on your camera to proceed with the exam.');
+      setIsCameraOn(false);
       console.error('Camera access error:', err);
     }
   };
@@ -43,7 +50,7 @@ const CameraMonitor = ({ role, examId, studentId }) => {
   const initializeTeacherMonitor = () => {
     // Initialize WebRTC connection for teacher monitoring
     peerConnection.current = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
     });
 
     // Handle incoming video stream
@@ -68,10 +75,12 @@ const CameraMonitor = ({ role, examId, studentId }) => {
       await peerConnection.current.setRemoteDescription(new RTCSessionDescription(offer));
       const answer = await peerConnection.current.createAnswer();
       await peerConnection.current.setLocalDescription(answer);
-      dataChannel.current.send(JSON.stringify({
-        type: 'answer',
-        answer: answer
-      }));
+      dataChannel.current.send(
+        JSON.stringify({
+          type: 'answer',
+          answer: answer,
+        })
+      );
     } catch (err) {
       console.error('Error handling offer:', err);
       setError('Failed to establish connection with student.');
@@ -80,7 +89,7 @@ const CameraMonitor = ({ role, examId, studentId }) => {
 
   const stopCamera = () => {
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       setStream(null);
       setIsCameraOn(false);
     }
@@ -109,12 +118,17 @@ const CameraMonitor = ({ role, examId, studentId }) => {
           </IconButton>
         )}
       </Box>
-      
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
-        
+      )}
+
+      {role === 'student' && !isCameraOn && !error && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          The camera must be turned on to proceed with the exam. Please enable your camera.
+        </Alert>
       )}
 
       <Box
@@ -124,7 +138,7 @@ const CameraMonitor = ({ role, examId, studentId }) => {
           backgroundColor: 'black',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
         }}
       >
         <video
@@ -135,7 +149,7 @@ const CameraMonitor = ({ role, examId, studentId }) => {
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'cover'
+            objectFit: 'cover',
           }}
         />
       </Box>
@@ -143,4 +157,4 @@ const CameraMonitor = ({ role, examId, studentId }) => {
   );
 };
 
-export default CameraMonitor; 
+export default CameraMonitor;
