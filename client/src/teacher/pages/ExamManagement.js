@@ -23,7 +23,13 @@ import {
   InputLabel,
   Select
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Assessment as ResultsIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Assessment as ResultsIcon,
+  GroupAdd as GroupAddIcon
+} from '@mui/icons-material';
 import { useAuth } from '../../shared/context/AuthContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -120,17 +126,12 @@ const ExamManagement = () => {
     e.preventDefault();
     try {
       const headers = getAuthHeader();
-      
-      // Format the dates properly
       const formattedData = {
         ...formData,
         startTime: new Date(formData.startTime).toISOString(),
         endTime: new Date(formData.endTime).toISOString()
       };
-      
-      // Log the data being sent to the server
-      console.log('Sending exam data:', formattedData);
-      
+
       if (selectedExam) {
         await axios.put(`http://localhost:5000/api/exams/${selectedExam._id}`, formattedData, {
           headers
@@ -140,16 +141,12 @@ const ExamManagement = () => {
           alert('Please select a course');
           return;
         }
-        const response = await axios.post('http://localhost:5000/api/exams', formattedData, {
-          headers
-        });
-        console.log('Exam created successfully:', response.data);
+        await axios.post('http://localhost:5000/api/exams', formattedData, { headers });
       }
       fetchExams();
       handleCloseDialog();
     } catch (error) {
       console.error('Error saving exam:', error);
-      console.error('Error details:', error.response?.data);
       alert(`Failed to save exam: ${error.response?.data?.message || error.message}`);
     }
   };
@@ -182,7 +179,7 @@ const ExamManagement = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
+        <Typography variant="h4" fontWeight="bold" color="primary.main">
           Exam Management
         </Typography>
         <Button
@@ -190,23 +187,24 @@ const ExamManagement = () => {
           color="primary"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
+          sx={{ borderRadius: 2 }}
         >
           Create New Exam
         </Button>
       </Box>
 
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} elevation={3}>
         <Table>
-          <TableHead>
+          <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
             <TableRow>
-              <TableCell>Title</TableCell>
-              <TableCell>Course</TableCell>
-              <TableCell>Duration (min)</TableCell>
-              <TableCell>Total Marks</TableCell>
-              <TableCell>Passing Marks</TableCell>
-              <TableCell>Start Time</TableCell>
-              <TableCell>End Time</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell><strong>Title</strong></TableCell>
+              <TableCell><strong>Course</strong></TableCell>
+              <TableCell><strong>Duration (min)</strong></TableCell>
+              <TableCell><strong>Total Marks</strong></TableCell>
+              <TableCell><strong>Passing Marks</strong></TableCell>
+              <TableCell><strong>Start Date</strong></TableCell>
+              <TableCell><strong>End Date</strong></TableCell>
+              <TableCell><strong>Actions</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -223,8 +221,8 @@ const ExamManagement = () => {
                   <IconButton onClick={() => handleManageQuestions(exam._id)} color="primary">
                     <EditIcon />
                   </IconButton>
-                  <IconButton onClick={() => handleManageStudents(exam._id)} color="primary">
-                    <AddIcon />
+                  <IconButton onClick={() => handleManageStudents(exam._id)} color="info">
+                    <GroupAddIcon />
                   </IconButton>
                   <IconButton onClick={() => handleViewResults(exam._id)} color="success">
                     <ResultsIcon />
@@ -242,39 +240,18 @@ const ExamManagement = () => {
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>{selectedExam ? 'Edit Exam' : 'Create New Exam'}</DialogTitle>
         <DialogContent>
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+          <Box component="form" sx={{ mt: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  required
-                />
+                <TextField fullWidth label="Title" name="title" value={formData.title} onChange={handleInputChange} required />
               </Grid>
               <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  multiline
-                  rows={4}
-                  required
-                />
+                <TextField fullWidth label="Description" name="description" value={formData.description} onChange={handleInputChange} multiline rows={4} required />
               </Grid>
               <Grid item xs={12}>
                 <FormControl fullWidth required>
                   <InputLabel>Course</InputLabel>
-                  <Select
-                    name="courseId"
-                    value={formData.courseId}
-                    onChange={handleInputChange}
-                    label="Course"
-                  >
+                  <Select name="courseId" value={formData.courseId} onChange={handleInputChange} label="Course">
                     {courses.map((course) => (
                       <MenuItem key={course._id} value={course._id}>
                         {course.name}
@@ -284,61 +261,19 @@ const ExamManagement = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Duration (minutes)"
-                  name="duration"
-                  type="number"
-                  value={formData.duration}
-                  onChange={handleInputChange}
-                  required
-                />
+                <TextField fullWidth label="Duration (minutes)" name="duration" type="number" value={formData.duration} onChange={handleInputChange} required />
               </Grid>
               <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Total Marks"
-                  name="totalMarks"
-                  type="number"
-                  value={formData.totalMarks}
-                  onChange={handleInputChange}
-                  required
-                />
+                <TextField fullWidth label="Total Marks" name="totalMarks" type="number" value={formData.totalMarks} onChange={handleInputChange} required />
               </Grid>
               <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Passing Marks"
-                  name="passingMarks"
-                  type="number"
-                  value={formData.passingMarks}
-                  onChange={handleInputChange}
-                  required
-                />
+                <TextField fullWidth label="Passing Marks" name="passingMarks" type="number" value={formData.passingMarks} onChange={handleInputChange} required />
               </Grid>
               <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Start Time"
-                  name="startTime"
-                  type="date"
-                  value={formData.startTime}
-                  onChange={handleInputChange}
-                  InputLabelProps={{ shrink: true }}
-                  required
-                />
+                <TextField fullWidth label="Start Date" name="startTime" type="date" value={formData.startTime} onChange={handleInputChange} InputLabelProps={{ shrink: true }} required />
               </Grid>
               <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="End Time"
-                  name="endTime"
-                  type="date"
-                  value={formData.endTime}
-                  onChange={handleInputChange}
-                  InputLabelProps={{ shrink: true }}
-                  required
-                />
+                <TextField fullWidth label="End Date" name="endTime" type="date" value={formData.endTime} onChange={handleInputChange} InputLabelProps={{ shrink: true }} required />
               </Grid>
             </Grid>
           </Box>
@@ -354,4 +289,4 @@ const ExamManagement = () => {
   );
 };
 
-export default ExamManagement; 
+export default ExamManagement;
