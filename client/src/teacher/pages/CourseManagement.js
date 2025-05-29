@@ -220,4 +220,4 @@ const CourseManagement = () => {
   );
 };
 
-export default CourseManagement; 
+export default CourseManagement;
