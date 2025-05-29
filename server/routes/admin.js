@@ -26,7 +26,7 @@ router.get('/users', getAllUsers);
 router.get('/students', getAllStudents);
 
 // Block/unblock a user
-router.put('/users/:id/block', toggleUserBlock);
+router.put('/users/:id/block', auth, checkRole(['admin']), toggleUserBlock);
 
 // Get system statistics
 router.get('/statistics', getStatistics);
