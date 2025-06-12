@@ -13,7 +13,6 @@ const {
     getExamDetails,
     getAllStudents,     
     addUser
-    
 } = require('../controllers/adminController');
 const { auth, checkRole } = require('../middleware/auth');
 
@@ -27,7 +26,7 @@ router.get('/users', getAllUsers);
 router.get('/students', getAllStudents);
 
 // Block/unblock a user
-router.put('/users/:id/block', auth, checkRole(['admin']), toggleUserBlock);
+router.put('/users/:id/block', toggleUserBlock);
 
 // Get system statistics
 router.get('/statistics', getStatistics);
