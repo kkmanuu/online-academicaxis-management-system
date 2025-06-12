@@ -86,41 +86,36 @@ exports.getAllUsers = async (req, res) => {
 
 // Block/unblock a user
 exports.toggleUserBlock = async (req, res) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Unauthorized: No user authenticated' });
+    try {
+        const user = await User.findById(req.params.id);
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        // Toggle the block status
+        user.isBlocked = !user.isBlocked;
+        await user.save();
+        
+        // Log the action
+        console.log(`User ${user._id} ${user.isBlocked ? 'blocked' : 'unblocked'} by admin ${req.user._id}`);
+        
+        res.json({
+            message: `User ${user.isBlocked ? 'blocked' : 'unblocked'} successfully`,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                isBlocked: user.isBlocked
+            }
+        });
+    } catch (error) {
+        console.error('Error toggling user block status:', error);
+        res.status(500).json({ message: 'Error updating user block status', error: error.message });
     }
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden: Only admins can perform this action' });
-    }
-
-    const user = await User.findById(req.params.id);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Toggle the block status
-    user.isBlocked = !user.isBlocked;
-    await user.save();
-
-    console.log(`User ${user._id} ${user.isBlocked ? 'blocked' : 'unblocked'} by admin ${req.user._id}`);
-
-    res.json({
-      message: `User ${user.isBlocked ? 'blocked' : 'unblocked'} successfully`,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isBlocked: user.isBlocked,
-      },
-    });
-  } catch (error) {
-    console.error('Error toggling user block status:', error);
-    res.status(500).json({ message: 'Error updating user block status', error: error.message });
-  }
 };
+
 // Get system statistics
 exports.getStatistics = async (req, res) => {
     try {
