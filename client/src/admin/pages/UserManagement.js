@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -24,33 +24,32 @@ import {
   MenuItem,
   Alert,
   Tabs,
-  Tab
-} from '@mui/material';
+  Tab,
+} from "@mui/material";
 import {
   Block as BlockIcon,
   CheckCircle as UnblockIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
-} from '@mui/icons-material';
-import axios from 'axios';
-import { useAuth } from '../../shared/context/AuthContext';
-
+  Delete as DeleteIcon,
+} from "@mui/icons-material";
+import axios from "axios";
+import { useAuth } from "../../shared/context/AuthContext";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogMode, setDialogMode] = useState('edit'); // 'edit' or 'add'
+  const [dialogMode, setDialogMode] = useState("edit"); // 'edit' or 'add'
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    role: '',
-    password: ''
+    name: "",
+    email: "",
+    role: "",
+    password: "",
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [tabValue, setTabValue] = useState(0);
   const { getAuthHeader } = useAuth();
 
@@ -60,12 +59,15 @@ const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/admin/users', {
-        headers: getAuthHeader()
-      });
+      const response = await axios.get(
+        "http://localhost:5000/api/admin/users",
+        {
+          headers: getAuthHeader(),
+        }
+      );
       setUsers(response.data);
     } catch (error) {
-      setError('Failed to load users. Please try again.');
+      setError("Failed to load users. Please try again.");
     }
   };
 
@@ -84,34 +86,34 @@ const UserManagement = () => {
       name: user.name,
       email: user.email,
       role: user.role,
-      password: ''
+      password: "",
     });
-    setDialogMode('edit');
+    setDialogMode("edit");
     setOpenDialog(true);
   };
 
   const handleAdd = () => {
     setSelectedUser(null);
     setFormData({
-      name: '',
-      email: '',
-      role: 'student',
-      password: ''
+      name: "",
+      email: "",
+      role: "student",
+      password: "",
     });
-    setDialogMode('add');
+    setDialogMode("add");
     setOpenDialog(true);
   };
 
   const handleDelete = async (userId) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+    if (window.confirm("Are you sure you want to delete this user?")) {
       try {
         await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, {
-          headers: getAuthHeader()
+          headers: getAuthHeader(),
         });
-        setSuccess('User deleted successfully');
+        setSuccess("User deleted successfully");
         fetchUsers();
       } catch (error) {
-        setError('Failed to delete user. Please try again.');
+        setError("Failed to delete user. Please try again.");
       }
     }
   };
@@ -123,34 +125,36 @@ const UserManagement = () => {
         {},
         { headers: getAuthHeader() }
       );
-      setSuccess(`User ${isBlocked ? 'unblocked' : 'blocked'} successfully`);
+      setSuccess(`User ${isBlocked ? "unblocked" : "blocked"} successfully`);
       fetchUsers();
     } catch (error) {
-      setError('Failed to update user status. Please try again.');
+      setError("Failed to update user status. Please try again.");
     }
   };
 
   const handleSave = async () => {
     try {
-      if (dialogMode === 'edit') {
+      if (dialogMode === "edit") {
         await axios.put(
           `http://localhost:5000/api/admin/users/${selectedUser._id}`,
           formData,
           { headers: getAuthHeader() }
         );
-        setSuccess('User updated successfully');
+        setSuccess("User updated successfully");
       } else {
-        await axios.post(
-          'http://localhost:5000/api/admin/users',
-          formData,
-          { headers: getAuthHeader() }
-        );
-        setSuccess('User created successfully');
+        await axios.post("http://localhost:5000/api/admin/users", formData, {
+          headers: getAuthHeader(),
+        });
+        setSuccess("User created successfully");
       }
       setOpenDialog(false);
       fetchUsers();
     } catch (error) {
-      setError(dialogMode === 'edit' ? 'Failed to update user' : 'Failed to create user');
+      setError(
+        dialogMode === "edit"
+          ? "Failed to update user"
+          : "Failed to create user"
+      );
     }
   };
 
@@ -159,21 +163,20 @@ const UserManagement = () => {
     setPage(0);
   };
 
-  const filteredUsers = users.filter(user => {
-    if (tabValue === 0) return user.role === 'teacher';
-    if (tabValue === 1) return user.role === 'student';
+  const filteredUsers = users.filter((user) => {
+    if (tabValue === 0) return user.role === "teacher";
+    if (tabValue === 1) return user.role === "student";
     return true;
   });
 
   return (
     <Box
-  sx={{
-    width: '100%',
-    ml: '0px !important',  // forcibly remove margin
-    px: 2,
-  }}
->
-
+      sx={{
+        width: "100%",
+        ml: "0px !important", // forcibly remove margin
+        px: 2,
+      }}
+    >
       <Typography variant="h4" gutterBottom>
         User Management
       </Typography>
@@ -185,8 +188,16 @@ const UserManagement = () => {
       >
         Add New User
       </Button>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
       <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 2 }}>
         <Tab label="Teachers" />
         <Tab label="Students" />
@@ -213,26 +224,38 @@ const UserManagement = () => {
                   <TableCell>
                     <Chip
                       label={user.role}
-                      color={user.role === 'admin' ? 'error' : user.role === 'teacher' ? 'primary' : 'success'}
+                      color={
+                        user.role === "admin"
+                          ? "error"
+                          : user.role === "teacher"
+                          ? "primary"
+                          : "success"
+                      }
                     />
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={user.isBlocked ? 'Blocked' : 'Active'}
-                      color={user.isBlocked ? 'error' : 'success'}
+                      label={user.isBlocked ? "Blocked" : "Active"}
+                      color={user.isBlocked ? "error" : "success"}
                     />
                   </TableCell>
                   <TableCell>
-                    <IconButton onClick={() => handleEdit(user)} color="primary">
+                    <IconButton
+                      onClick={() => handleEdit(user)}
+                      color="primary"
+                    >
                       <EditIcon />
                     </IconButton>
                     <IconButton
                       onClick={() => handleBlock(user._id, user.isBlocked)}
-                      color={user.isBlocked ? 'success' : 'error'}
+                      color={user.isBlocked ? "success" : "error"}
                     >
                       {user.isBlocked ? <UnblockIcon /> : <BlockIcon />}
                     </IconButton>
-                    <IconButton onClick={() => handleDelete(user._id)} color="error">
+                    <IconButton
+                      onClick={() => handleDelete(user._id)}
+                      color="error"
+                    >
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -251,7 +274,9 @@ const UserManagement = () => {
         />
       </TableContainer>
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>{dialogMode === 'edit' ? 'Edit User' : 'Add User'}</DialogTitle>
+        <DialogTitle>
+          {dialogMode === "edit" ? "Edit User" : "Add User"}
+        </DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -267,23 +292,29 @@ const UserManagement = () => {
             type="email"
             fullWidth
             value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, email: e.target.value })
+            }
           />
-          {dialogMode === 'add' && (
+          {dialogMode === "add" && (
             <TextField
               margin="dense"
               label="Password"
               type="password"
               fullWidth
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
             />
           )}
           <FormControl fullWidth margin="dense">
             <InputLabel>Role</InputLabel>
             <Select
               value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, role: e.target.value })
+              }
             >
               <MenuItem value="student">Student</MenuItem>
               <MenuItem value="teacher">Teacher</MenuItem>
@@ -292,7 +323,9 @@ const UserManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleSave} color="primary">{dialogMode === 'edit' ? 'Save' : 'Create'}</Button>
+          <Button onClick={handleSave} color="primary">
+            {dialogMode === "edit" ? "Save" : "Create"}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
