@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -21,18 +21,18 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Select
-} from '@mui/material';
+  Select,
+} from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Assessment as ResultsIcon,
-  GroupAdd as GroupAddIcon
-} from '@mui/icons-material';
-import { useAuth } from '../../shared/context/AuthContext';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+  GroupAdd as GroupAddIcon,
+} from "@mui/icons-material";
+import { useAuth } from "../../shared/context/AuthContext";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const ExamManagement = () => {
   const [exams, setExams] = useState([]);
@@ -40,14 +40,14 @@ const ExamManagement = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    courseId: '',
+    title: "",
+    description: "",
+    courseId: "",
     duration: 60,
     totalMarks: 100,
     passingMarks: 40,
-    startTime: '',
-    endTime: ''
+    startTime: "",
+    endTime: "",
   });
 
   const { getAuthHeader } = useAuth();
@@ -60,23 +60,29 @@ const ExamManagement = () => {
 
   const fetchExams = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/exams/teacher', {
-        headers: getAuthHeader()
-      });
+      const response = await axios.get(
+        "http://localhost:5000/api/exams/teacher",
+        {
+          headers: getAuthHeader(),
+        }
+      );
       setExams(response.data);
     } catch (error) {
-      console.error('Error fetching exams:', error);
+      console.error("Error fetching exams:", error);
     }
   };
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/teacher/courses', {
-        headers: getAuthHeader()
-      });
+      const response = await axios.get(
+        "http://localhost:5000/api/teacher/courses",
+        {
+          headers: getAuthHeader(),
+        }
+      );
       setCourses(response.data);
     } catch (error) {
-      console.error('Error fetching courses:', error);
+      console.error("Error fetching courses:", error);
     }
   };
 
@@ -90,20 +96,20 @@ const ExamManagement = () => {
         duration: exam.duration,
         totalMarks: exam.totalMarks,
         passingMarks: exam.passingMarks,
-        startTime: exam.startTime.split('T')[0],
-        endTime: exam.endTime.split('T')[0]
+        startTime: exam.startTime.split("T")[0],
+        endTime: exam.endTime.split("T")[0],
       });
     } else {
       setSelectedExam(null);
       setFormData({
-        title: '',
-        description: '',
-        courseId: '',
+        title: "",
+        description: "",
+        courseId: "",
         duration: 60,
         totalMarks: 100,
         passingMarks: 40,
-        startTime: '',
-        endTime: ''
+        startTime: "",
+        endTime: "",
       });
     }
     setOpenDialog(true);
@@ -116,9 +122,9 @@ const ExamManagement = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -129,37 +135,45 @@ const ExamManagement = () => {
       const formattedData = {
         ...formData,
         startTime: new Date(formData.startTime).toISOString(),
-        endTime: new Date(formData.endTime).toISOString()
+        endTime: new Date(formData.endTime).toISOString(),
       };
 
       if (selectedExam) {
-        await axios.put(`http://localhost:5000/api/exams/${selectedExam._id}`, formattedData, {
-          headers
-        });
+        await axios.put(
+          `http://localhost:5000/api/exams/${selectedExam._id}`,
+          formattedData,
+          {
+            headers,
+          }
+        );
       } else {
         if (!formData.courseId) {
-          alert('Please select a course');
+          alert("Please select a course");
           return;
         }
-        await axios.post('http://localhost:5000/api/exams', formattedData, { headers });
+        await axios.post("http://localhost:5000/api/exams", formattedData, {
+          headers,
+        });
       }
       fetchExams();
       handleCloseDialog();
     } catch (error) {
-      console.error('Error saving exam:', error);
-      alert(`Failed to save exam: ${error.response?.data?.message || error.message}`);
+      console.error("Error saving exam:", error);
+      alert(
+        `Failed to save exam: ${error.response?.data?.message || error.message}`
+      );
     }
   };
 
   const handleDelete = async (examId) => {
-    if (window.confirm('Are you sure you want to delete this exam?')) {
+    if (window.confirm("Are you sure you want to delete this exam?")) {
       try {
         await axios.delete(`http://localhost:5000/api/exams/${examId}`, {
-          headers: getAuthHeader()
+          headers: getAuthHeader(),
         });
         fetchExams();
       } catch (error) {
-        console.error('Error deleting exam:', error);
+        console.error("Error deleting exam:", error);
       }
     }
   };
@@ -178,7 +192,12 @@ const ExamManagement = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+      >
         <Typography variant="h4" fontWeight="bold" color="primary.main">
           Exam Management
         </Typography>
@@ -195,39 +214,71 @@ const ExamManagement = () => {
 
       <TableContainer component={Paper} elevation={3}>
         <Table>
-          <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+          <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
             <TableRow>
-              <TableCell><strong>Title</strong></TableCell>
-              <TableCell><strong>Course</strong></TableCell>
-              <TableCell><strong>Duration (min)</strong></TableCell>
-              <TableCell><strong>Total Marks</strong></TableCell>
-              <TableCell><strong>Passing Marks</strong></TableCell>
-              <TableCell><strong>Start Date</strong></TableCell>
-              <TableCell><strong>End Date</strong></TableCell>
-              <TableCell><strong>Actions</strong></TableCell>
+              <TableCell>
+                <strong>Title</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Course</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Duration (min)</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Total Marks</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Passing Marks</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Start Date</strong>
+              </TableCell>
+              <TableCell>
+                <strong>End Date</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Actions</strong>
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {exams.map((exam) => (
               <TableRow key={exam._id}>
                 <TableCell>{exam.title}</TableCell>
-                <TableCell>{exam.course?.name || 'N/A'}</TableCell>
+                <TableCell>{exam.course?.name || "N/A"}</TableCell>
                 <TableCell>{exam.duration}</TableCell>
                 <TableCell>{exam.totalMarks}</TableCell>
                 <TableCell>{exam.passingMarks}</TableCell>
-                <TableCell>{new Date(exam.startTime).toLocaleDateString()}</TableCell>
-                <TableCell>{new Date(exam.endTime).toLocaleDateString()}</TableCell>
                 <TableCell>
-                  <IconButton onClick={() => handleManageQuestions(exam._id)} color="primary">
+                  {new Date(exam.startTime).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  {new Date(exam.endTime).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <IconButton
+                    onClick={() => handleManageQuestions(exam._id)}
+                    color="primary"
+                  >
                     <EditIcon />
                   </IconButton>
-                  <IconButton onClick={() => handleManageStudents(exam._id)} color="info">
+                  <IconButton
+                    onClick={() => handleManageStudents(exam._id)}
+                    color="info"
+                  >
                     <GroupAddIcon />
                   </IconButton>
-                  <IconButton onClick={() => handleViewResults(exam._id)} color="success">
+                  <IconButton
+                    onClick={() => handleViewResults(exam._id)}
+                    color="success"
+                  >
                     <ResultsIcon />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(exam._id)} color="error">
+                  <IconButton
+                    onClick={() => handleDelete(exam._id)}
+                    color="error"
+                  >
                     <DeleteIcon />
                   </IconButton>
                 </TableCell>
@@ -237,21 +288,49 @@ const ExamManagement = () => {
         </Table>
       </TableContainer>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>{selectedExam ? 'Edit Exam' : 'Create New Exam'}</DialogTitle>
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          {selectedExam ? "Edit Exam" : "Create New Exam"}
+        </DialogTitle>
         <DialogContent>
           <Box component="form" sx={{ mt: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
-                <TextField fullWidth label="Title" name="title" value={formData.title} onChange={handleInputChange} required />
+                <TextField
+                  fullWidth
+                  label="Title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  required
+                />
               </Grid>
               <Grid item xs={12}>
-                <TextField fullWidth label="Description" name="description" value={formData.description} onChange={handleInputChange} multiline rows={4} required />
+                <TextField
+                  fullWidth
+                  label="Description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  multiline
+                  rows={4}
+                  required
+                />
               </Grid>
               <Grid item xs={12}>
                 <FormControl fullWidth required>
                   <InputLabel>Course</InputLabel>
-                  <Select name="courseId" value={formData.courseId} onChange={handleInputChange} label="Course">
+                  <Select
+                    name="courseId"
+                    value={formData.courseId}
+                    onChange={handleInputChange}
+                    label="Course"
+                  >
                     {courses.map((course) => (
                       <MenuItem key={course._id} value={course._id}>
                         {course.name}
@@ -261,19 +340,61 @@ const ExamManagement = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={6}>
-                <TextField fullWidth label="Duration (minutes)" name="duration" type="number" value={formData.duration} onChange={handleInputChange} required />
+                <TextField
+                  fullWidth
+                  label="Duration (minutes)"
+                  name="duration"
+                  type="number"
+                  value={formData.duration}
+                  onChange={handleInputChange}
+                  required
+                />
               </Grid>
               <Grid item xs={6}>
-                <TextField fullWidth label="Total Marks" name="totalMarks" type="number" value={formData.totalMarks} onChange={handleInputChange} required />
+                <TextField
+                  fullWidth
+                  label="Total Marks"
+                  name="totalMarks"
+                  type="number"
+                  value={formData.totalMarks}
+                  onChange={handleInputChange}
+                  required
+                />
               </Grid>
               <Grid item xs={6}>
-                <TextField fullWidth label="Passing Marks" name="passingMarks" type="number" value={formData.passingMarks} onChange={handleInputChange} required />
+                <TextField
+                  fullWidth
+                  label="Passing Marks"
+                  name="passingMarks"
+                  type="number"
+                  value={formData.passingMarks}
+                  onChange={handleInputChange}
+                  required
+                />
               </Grid>
               <Grid item xs={6}>
-                <TextField fullWidth label="Start Date" name="startTime" type="date" value={formData.startTime} onChange={handleInputChange} InputLabelProps={{ shrink: true }} required />
+                <TextField
+                  fullWidth
+                  label="Start Date"
+                  name="startTime"
+                  type="date"
+                  value={formData.startTime}
+                  onChange={handleInputChange}
+                  InputLabelProps={{ shrink: true }}
+                  required
+                />
               </Grid>
               <Grid item xs={6}>
-                <TextField fullWidth label="End Date" name="endTime" type="date" value={formData.endTime} onChange={handleInputChange} InputLabelProps={{ shrink: true }} required />
+                <TextField
+                  fullWidth
+                  label="End Date"
+                  name="endTime"
+                  type="date"
+                  value={formData.endTime}
+                  onChange={handleInputChange}
+                  InputLabelProps={{ shrink: true }}
+                  required
+                />
               </Grid>
             </Grid>
           </Box>
@@ -281,7 +402,7 @@ const ExamManagement = () => {
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button onClick={handleSubmit} variant="contained" color="primary">
-            {selectedExam ? 'Update' : 'Create'}
+            {selectedExam ? "Update" : "Create"}
           </Button>
         </DialogActions>
       </Dialog>
