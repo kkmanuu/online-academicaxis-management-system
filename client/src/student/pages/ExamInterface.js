@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
   Container,
@@ -14,10 +14,10 @@ import {
   FormControlLabel,
   FormControl,
   FormLabel,
-  Divider
-} from '@mui/material';
-import axios from 'axios';
-import { useAuth } from '../../shared/context/AuthContext';
+  Divider,
+} from "@mui/material";
+import axios from "axios";
+import { useAuth } from "../../shared/context/AuthContext";
 
 const ExamInterface = () => {
   const { examId } = useParams();
@@ -26,7 +26,7 @@ const ExamInterface = () => {
   const [exam, setExam] = useState(null);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [timeLeft, setTimeLeft] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
@@ -41,7 +41,7 @@ const ExamInterface = () => {
 
     return () => {
       if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream.getTracks().forEach((track) => track.stop());
         setCameraStream(null);
       }
       if (wsRef.current) {
@@ -55,13 +55,16 @@ const ExamInterface = () => {
 
   const fetchExamDetails = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/student/exams/${examId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      console.log('Exam data received:', response.data);
+      const response = await axios.get(
+        `http://localhost:5000/api/student/exams/${examId}`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      console.log("Exam data received:", response.data);
 
       if (!response.data.questions || !Array.isArray(response.data.questions)) {
-        console.warn('Exam data does not contain valid questions property');
+        console.warn("Exam data does not contain valid questions property");
         response.data.questions = [];
       }
 
@@ -69,8 +72,11 @@ const ExamInterface = () => {
       setLoading(false);
       startTimer(response.data.duration);
     } catch (error) {
-      console.error('Error fetching exam details:', error);
-      setError(error.response?.data?.message || 'Failed to load exam details. Please try again.');
+      console.error("Error fetching exam details:", error);
+      setError(
+        error.response?.data?.message ||
+          "Failed to load exam details. Please try again."
+      );
       setLoading(false);
     }
   };
@@ -83,61 +89,67 @@ const ExamInterface = () => {
         videoRef.current.srcObject = stream;
       }
     } catch (error) {
-      console.error('Camera access error:', error);
-      setError('Failed to access camera. Please ensure camera permissions are granted.');
+      console.error("Camera access error:", error);
+      setError(
+        "Failed to access camera. Please ensure camera permissions are granted."
+      );
     }
   };
 
   const setupWebSocket = () => {
-    const ws = new WebSocket('ws://localhost:5000');
+    const ws = new WebSocket("ws://localhost:5000");
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log('WebSocket connected');
-      ws.send(JSON.stringify({
-        type: 'student_join',
-        examId,
-        studentId: user._id
-      }));
+      console.log("WebSocket connected");
+      ws.send(
+        JSON.stringify({
+          type: "student_join",
+          examId,
+          studentId: user._id,
+        })
+      );
     };
 
     ws.onmessage = async (event) => {
       const data = JSON.parse(event.data);
-      if (data.type === 'webrtc_offer') {
+      if (data.type === "webrtc_offer") {
         await handleWebRTCOffer(data.offer);
       }
     };
 
     ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error("WebSocket error:", error);
     };
 
     ws.onclose = () => {
-      console.log('WebSocket closed');
+      console.log("WebSocket closed");
     };
   };
 
   const handleWebRTCOffer = async (offer) => {
     try {
       const pc = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
       });
       peerConnectionRef.current = pc;
 
       if (cameraStream) {
-        cameraStream.getTracks().forEach(track => {
+        cameraStream.getTracks().forEach((track) => {
           pc.addTrack(track, cameraStream);
         });
       }
 
       pc.onicecandidate = (event) => {
         if (event.candidate) {
-          wsRef.current.send(JSON.stringify({
-            type: 'ice_candidate',
-            candidate: event.candidate,
-            examId,
-            studentId: user._id
-          }));
+          wsRef.current.send(
+            JSON.stringify({
+              type: "ice_candidate",
+              candidate: event.candidate,
+              examId,
+              studentId: user._id,
+            })
+          );
         }
       };
 
@@ -145,14 +157,16 @@ const ExamInterface = () => {
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
-      wsRef.current.send(JSON.stringify({
-        type: 'webrtc_answer',
-        answer,
-        examId,
-        studentId: user._id
-      }));
+      wsRef.current.send(
+        JSON.stringify({
+          type: "webrtc_answer",
+          answer,
+          examId,
+          studentId: user._id,
+        })
+      );
     } catch (error) {
-      console.error('WebRTC error:', error);
+      console.error("WebRTC error:", error);
     }
   };
 
@@ -165,7 +179,7 @@ const ExamInterface = () => {
       if (remaining <= 0) {
         clearInterval(timer);
         if (cameraStream) {
-          cameraStream.getTracks().forEach(track => track.stop());
+          cameraStream.getTracks().forEach((track) => track.stop());
           setCameraStream(null);
         }
         if (wsRef.current) {
@@ -179,16 +193,19 @@ const ExamInterface = () => {
   };
 
   const handleAnswerChange = (questionId, value) => {
-    setAnswers(prev => ({
+    setAnswers((prev) => ({
       ...prev,
-      [questionId]: value
+      [questionId]: value,
     }));
   };
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
-    if (exam.questions.length > 0 && Object.keys(answers).length !== exam.questions.length) {
-      setError('Please answer all questions before submitting.');
+    if (
+      exam.questions.length > 0 &&
+      Object.keys(answers).length !== exam.questions.length
+    ) {
+      setError("Please answer all questions before submitting.");
       return;
     }
 
@@ -196,7 +213,7 @@ const ExamInterface = () => {
 
     try {
       if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream.getTracks().forEach((track) => track.stop());
         setCameraStream(null);
       }
 
@@ -204,29 +221,44 @@ const ExamInterface = () => {
         wsRef.current.close();
       }
 
-      console.log('Submitting exam with answers:', answers);
+      console.log("Submitting exam with answers:", answers);
 
-      const response = await axios.post(`http://localhost:5000/api/student/exams/${examId}/submit`, {
-        answers
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await axios.post(
+        `http://localhost:5000/api/student/exams/${examId}/submit`,
+        {
+          answers,
+        },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
 
-      console.log('Exam submission response:', response.data);
-      
+      console.log("Exam submission response:", response.data);
+
       alert(`Exam submitted successfully! Your score: ${response.data.score}%`);
-      navigate('/student/results');
+      navigate("/student/results");
     } catch (error) {
-      console.error('Error submitting exam:', error);
-      console.error('Error details:', error.response ? error.response.data : 'No response data');
-      setError(error.response?.data?.message || 'Failed to submit exam. Please try again.');
+      console.error("Error submitting exam:", error);
+      console.error(
+        "Error details:",
+        error.response ? error.response.data : "No response data"
+      );
+      setError(
+        error.response?.data?.message ||
+          "Failed to submit exam. Please try again."
+      );
       setIsSubmitting(false);
     }
   };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
         <CircularProgress />
       </Box>
     );
@@ -252,7 +284,8 @@ const ExamInterface = () => {
               Duration: {exam.duration} minutes
             </Typography>
             <Typography variant="h6" color="primary" sx={{ mt: 2, mb: 2 }}>
-              Time Remaining: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+              Time Remaining: {Math.floor(timeLeft / 60)}:
+              {(timeLeft % 60).toString().padStart(2, "0")}
             </Typography>
             <Divider sx={{ my: 3 }} />
             {exam.questions && exam.questions.length > 0 ? (
@@ -264,15 +297,19 @@ const ExamInterface = () => {
                   <FormControl component="fieldset">
                     <FormLabel component="legend">Select an option</FormLabel>
                     <RadioGroup
-                      value={answers[question._id] || ''}
-                      onChange={(e) => handleAnswerChange(question._id, e.target.value)}
+                      value={answers[question._id] || ""}
+                      onChange={(e) =>
+                        handleAnswerChange(question._id, e.target.value)
+                      }
                     >
                       {question.options.map((option, optionIndex) => (
                         <FormControlLabel
                           key={optionIndex}
                           value={String.fromCharCode(97 + optionIndex)} // Sends 'a', 'b', 'c', 'd'
                           control={<Radio />}
-                          label={`${String.fromCharCode(65 + optionIndex)}. ${option}`}
+                          label={`${String.fromCharCode(
+                            65 + optionIndex
+                          )}. ${option}`}
                         />
                       ))}
                     </RadioGroup>
@@ -284,14 +321,14 @@ const ExamInterface = () => {
                 No questions available for this exam.
               </Typography>
             )}
-            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
+            <Box sx={{ mt: 4, display: "flex", justifyContent: "flex-end" }}>
               <Button
                 variant="contained"
                 color="primary"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? <CircularProgress size={24} /> : 'Submit Exam'}
+                {isSubmitting ? <CircularProgress size={24} /> : "Submit Exam"}
               </Button>
             </Box>
           </Paper>
@@ -306,7 +343,7 @@ const ExamInterface = () => {
               autoPlay
               playsInline
               muted
-              style={{ width: '100%', borderRadius: '8px' }}
+              style={{ width: "100%", borderRadius: "8px" }}
             />
           </Paper>
         </Grid>
