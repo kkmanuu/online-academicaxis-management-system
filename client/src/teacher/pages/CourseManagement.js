@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -18,22 +18,26 @@ import {
   TextField,
   IconButton,
   Grid,
-  Alert
-} from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { useAuth } from '../../shared/context/AuthContext';
-import axios from 'axios';
+  Alert,
+} from "@mui/material";
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+} from "@mui/icons-material";
+import { useAuth } from "../../shared/context/AuthContext";
+import axios from "axios";
 
 const CourseManagement = () => {
   const [courses, setCourses] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [formData, setFormData] = useState({
-    name: '',
-    description: ''
+    name: "",
+    description: "",
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const { getAuthHeader } = useAuth();
 
@@ -43,13 +47,16 @@ const CourseManagement = () => {
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/teacher/courses', {
-        headers: getAuthHeader()
-      });
+      const response = await axios.get(
+        "http://localhost:5000/api/teacher/courses",
+        {
+          headers: getAuthHeader(),
+        }
+      );
       setCourses(response.data);
     } catch (error) {
-      console.error('Error fetching courses:', error);
-      setError('Failed to fetch courses');
+      console.error("Error fetching courses:", error);
+      setError("Failed to fetch courses");
     }
   };
 
@@ -58,13 +65,13 @@ const CourseManagement = () => {
       setSelectedCourse(course);
       setFormData({
         name: course.name,
-        description: course.description
+        description: course.description,
       });
     } else {
       setSelectedCourse(null);
       setFormData({
-        name: '',
-        description: ''
+        name: "",
+        description: "",
       });
     }
     setOpenDialog(true);
@@ -74,16 +81,16 @@ const CourseManagement = () => {
     setOpenDialog(false);
     setSelectedCourse(null);
     setFormData({
-      name: '',
-      description: ''
+      name: "",
+      description: "",
     });
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -91,49 +98,73 @@ const CourseManagement = () => {
     e.preventDefault();
     try {
       if (selectedCourse) {
-        await axios.put(`http://localhost:5000/api/teacher/courses/${selectedCourse._id}`, formData, {
-          headers: getAuthHeader()
-        });
-        setSuccess('Course updated successfully');
+        await axios.put(
+          `http://localhost:5000/api/teacher/courses/${selectedCourse._id}`,
+          formData,
+          {
+            headers: getAuthHeader(),
+          }
+        );
+        setSuccess("Course updated successfully");
       } else {
-        await axios.post('http://localhost:5000/api/teacher/courses', formData, {
-          headers: getAuthHeader()
-        });
-        setSuccess('Course created successfully');
+        await axios.post(
+          "http://localhost:5000/api/teacher/courses",
+          formData,
+          {
+            headers: getAuthHeader(),
+          }
+        );
+        setSuccess("Course created successfully");
       }
       handleCloseDialog();
       fetchCourses();
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(""), 3000);
     } catch (error) {
-      console.error('Error saving course:', error);
-      setError(error.response?.data?.message || 'Error saving course');
-      setTimeout(() => setError(''), 3000);
+      console.error("Error saving course:", error);
+      setError(error.response?.data?.message || "Error saving course");
+      setTimeout(() => setError(""), 3000);
     }
   };
 
   const handleDelete = async (courseId) => {
-    if (window.confirm('Are you sure you want to delete this course?')) {
+    if (window.confirm("Are you sure you want to delete this course?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/teacher/courses/${courseId}`, {
-          headers: getAuthHeader()
-        });
-        setSuccess('Course deleted successfully');
+        await axios.delete(
+          `http://localhost:5000/api/teacher/courses/${courseId}`,
+          {
+            headers: getAuthHeader(),
+          }
+        );
+        setSuccess("Course deleted successfully");
         fetchCourses();
-        setTimeout(() => setSuccess(''), 3000);
+        setTimeout(() => setSuccess(""), 3000);
       } catch (error) {
-        console.error('Error deleting course:', error);
-        setError(error.response?.data?.message || 'Error deleting course');
-        setTimeout(() => setError(''), 3000);
+        console.error("Error deleting course:", error);
+        setError(error.response?.data?.message || "Error deleting course");
+        setTimeout(() => setError(""), 3000);
       }
     }
   };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
 
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+      >
         <Typography variant="h4" component="h1">
           Course Management
         </Typography>
@@ -164,12 +195,18 @@ const CourseManagement = () => {
                 <TableCell>{course.name}</TableCell>
                 <TableCell>{course.description}</TableCell>
                 <TableCell>{course.students?.length || 0}</TableCell>
-                <TableCell>{course.isActive ? 'Active' : 'Inactive'}</TableCell>
+                <TableCell>{course.isActive ? "Active" : "Inactive"}</TableCell>
                 <TableCell>
-                  <IconButton onClick={() => handleOpenDialog(course)} color="primary">
+                  <IconButton
+                    onClick={() => handleOpenDialog(course)}
+                    color="primary"
+                  >
                     <EditIcon />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(course._id)} color="error">
+                  <IconButton
+                    onClick={() => handleDelete(course._id)}
+                    color="error"
+                  >
                     <DeleteIcon />
                   </IconButton>
                 </TableCell>
@@ -179,8 +216,15 @@ const CourseManagement = () => {
         </Table>
       </TableContainer>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{selectedCourse ? 'Edit Course' : 'Add New Course'}</DialogTitle>
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {selectedCourse ? "Edit Course" : "Add New Course"}
+        </DialogTitle>
         <DialogContent>
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
             <Grid container spacing={2}>
@@ -212,7 +256,7 @@ const CourseManagement = () => {
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button onClick={handleSubmit} variant="contained" color="primary">
-            {selectedCourse ? 'Update' : 'Create'}
+            {selectedCourse ? "Update" : "Create"}
           </Button>
         </DialogActions>
       </Dialog>
