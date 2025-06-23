@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -24,17 +24,21 @@ import {
   Grid,
   FormControlLabel,
   Switch,
-  Tooltip
-} from '@mui/material';
-import { Search as SearchIcon, Block as BlockIcon, CheckCircle as UnblockIcon } from '@mui/icons-material';
-import axios from 'axios';
-import { useAuth } from '../../shared/context/AuthContext';
+  Tooltip,
+} from "@mui/material";
+import {
+  Search as SearchIcon,
+  Block as BlockIcon,
+  CheckCircle as UnblockIcon,
+} from "@mui/icons-material";
+import axios from "axios";
+import { useAuth } from "../../shared/context/AuthContext";
 
 const StudentManagement = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [studentResults, setStudentResults] = useState([]);
@@ -47,15 +51,18 @@ const StudentManagement = () => {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/admin/students', {
-        headers: getAuthHeader()
-      });
-      console.log('Students fetched:', response.data);
+      const response = await axios.get(
+        "http://localhost:5000/api/admin/students",
+        {
+          headers: getAuthHeader(),
+        }
+      );
+      console.log("Students fetched:", response.data);
       setStudents(response.data);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching students:', error);
-      setError('Failed to load students. Please try again.');
+      console.error("Error fetching students:", error);
+      setError("Failed to load students. Please try again.");
       setLoading(false);
     }
   };
@@ -63,15 +70,18 @@ const StudentManagement = () => {
   const fetchStudentResults = async (studentId) => {
     try {
       setLoadingResults(true);
-      const response = await axios.get(`http://localhost:5000/api/admin/students/${studentId}/results`, {
-        headers: getAuthHeader()
-      });
-      console.log('Student results fetched:', response.data);
+      const response = await axios.get(
+        `http://localhost:5000/api/admin/students/${studentId}/results`,
+        {
+          headers: getAuthHeader(),
+        }
+      );
+      console.log("Student results fetched:", response.data);
       setStudentResults(response.data);
       setLoadingResults(false);
     } catch (error) {
-      console.error('Error fetching student results:', error);
-      setError('Failed to load student results. Please try again.');
+      console.error("Error fetching student results:", error);
+      setError("Failed to load student results. Please try again.");
       setLoadingResults(false);
     }
   };
@@ -99,20 +109,22 @@ const StudentManagement = () => {
         {},
         { headers: getAuthHeader() }
       );
-      
+
       // Update the student in the local state
-      setStudents(students.map(s => 
-        s._id === student._id ? { ...s, isBlocked: !s.isBlocked } : s
-      ));
-      
-      console.log('Student block status updated:', response.data);
+      setStudents(
+        students.map((s) =>
+          s._id === student._id ? { ...s, isBlocked: !s.isBlocked } : s
+        )
+      );
+
+      console.log("Student block status updated:", response.data);
     } catch (error) {
-      console.error('Error updating student block status:', error);
-      setError('Failed to update student status. Please try again.');
+      console.error("Error updating student block status:", error);
+      setError("Failed to update student status. Please try again.");
     }
   };
 
-  const filteredStudents = students.filter(student => {
+  const filteredStudents = students.filter((student) => {
     const searchLower = searchTerm.toLowerCase();
     return (
       (student.name && student.name.toLowerCase().includes(searchLower)) ||
@@ -122,7 +134,12 @@ const StudentManagement = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
         <CircularProgress />
       </Box>
     );
@@ -137,12 +154,11 @@ const StudentManagement = () => {
   }
 
   return (
-    
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" gutterBottom>
         Student Management
       </Typography>
-      
+
       <Paper sx={{ p: 2, mb: 3 }}>
         <TextField
           fullWidth
@@ -159,12 +175,10 @@ const StudentManagement = () => {
           }}
         />
       </Paper>
-      
+
       {filteredStudents.length === 0 ? (
         <Paper sx={{ p: 3, mt: 2 }}>
-          <Typography variant="body1">
-            No students found.
-          </Typography>
+          <Typography variant="body1">No students found.</Typography>
         </Paper>
       ) : (
         <TableContainer component={Paper} sx={{ mt: 2 }}>
@@ -183,23 +197,27 @@ const StudentManagement = () => {
                   <TableCell>{student.name}</TableCell>
                   <TableCell>{student.email}</TableCell>
                   <TableCell>
-                    <Chip 
-                      label={student.isBlocked ? "Blocked" : "Active"} 
-                      color={student.isBlocked ? "error" : "success"} 
+                    <Chip
+                      label={student.isBlocked ? "Blocked" : "Active"}
+                      color={student.isBlocked ? "error" : "success"}
                     />
                   </TableCell>
                   <TableCell>
-                    <Button 
-                      variant="outlined" 
-                      color="primary" 
+                    <Button
+                      variant="outlined"
+                      color="primary"
                       onClick={() => handleViewResults(student)}
                       sx={{ mr: 1 }}
                     >
                       View Results
                     </Button>
-                    <Tooltip title={student.isBlocked ? "Unblock Student" : "Block Student"}>
-                      <IconButton 
-                        onClick={() => handleToggleBlock(student)} 
+                    <Tooltip
+                      title={
+                        student.isBlocked ? "Unblock Student" : "Block Student"
+                      }
+                    >
+                      <IconButton
+                        onClick={() => handleToggleBlock(student)}
                         color={student.isBlocked ? "success" : "error"}
                       >
                         {student.isBlocked ? <UnblockIcon /> : <BlockIcon />}
@@ -214,10 +232,13 @@ const StudentManagement = () => {
       )}
 
       {/* Results Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>
-          Results for {selectedStudent?.name}
-        </DialogTitle>
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Results for {selectedStudent?.name}</DialogTitle>
         <DialogContent>
           {loadingResults ? (
             <Box display="flex" justifyContent="center" p={3}>
@@ -242,17 +263,24 @@ const StudentManagement = () => {
                 <TableBody>
                   {studentResults.map((result) => (
                     <TableRow key={result._id}>
-                      <TableCell>{result.exam ? result.exam.title : 'Unknown'}</TableCell>
-                      <TableCell>{result.exam && result.exam.course ? result.exam.course.name : 'Unknown'}</TableCell>
+                      <TableCell>
+                        {result.exam ? result.exam.title : "Unknown"}
+                      </TableCell>
+                      <TableCell>
+                        {result.exam && result.exam.course
+                          ? result.exam.course.name
+                          : "Unknown"}
+                      </TableCell>
                       <TableCell>{result.percentage.toFixed(2)}%</TableCell>
                       <TableCell>
-                        <Chip 
-                          label={result.status} 
-                          color={result.status === 'pass' ? 'success' : 'error'} 
+                        <Chip
+                          label={result.status}
+                          color={result.status === "pass" ? "success" : "error"}
                         />
                       </TableCell>
                       <TableCell>
-                        {new Date(result.submittedAt).toLocaleDateString()} {new Date(result.submittedAt).toLocaleTimeString()}
+                        {new Date(result.submittedAt).toLocaleDateString()}{" "}
+                        {new Date(result.submittedAt).toLocaleTimeString()}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -269,4 +297,4 @@ const StudentManagement = () => {
   );
 };
 
-export default StudentManagement; 
+export default StudentManagement;
