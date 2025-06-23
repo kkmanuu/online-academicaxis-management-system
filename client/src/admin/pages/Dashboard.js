@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import {
   Box,
@@ -23,20 +23,28 @@ import {
   School as SchoolIcon,
   ExitToApp as LogoutIcon,
   Assessment as ResultsIcon,
-  Person as StudentIcon
+  Person as StudentIcon,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../shared/context/AuthContext';
-import axios from 'axios';
 import StudentManagement from './StudentManagement';
 import ExamResults from './ExamResults';
 import UserManagement from './UserManagement';
+import SettingsSidebar from '../../shared/components/SettingsSidebar';
 
 const AdminDashboard = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleThemeToggle = () => {
+    setIsDarkMode(!isDarkMode);
+    // Implement theme change logic here (e.g., update CSS variables or context)
   };
 
   const drawer = (
@@ -119,9 +127,16 @@ const AdminDashboard = () => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold', flexGrow: 1 }}>
             EduConnect Dashboard - Admin
           </Typography>
+          <IconButton
+            color="inherit"
+            aria-label="open settings"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <SettingsIcon />
+          </IconButton>
         </Toolbar>
       </AppBar>
       <Drawer
@@ -159,6 +174,12 @@ const AdminDashboard = () => {
       >
         {drawer}
       </Drawer>
+      <SettingsSidebar
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onThemeToggle={handleThemeToggle}
+        isDarkMode={isDarkMode}
+      />
       <Box
         component="main"
         sx={{
@@ -166,7 +187,6 @@ const AdminDashboard = () => {
           p: 2,
           width: { sm: `calc(100% - 240px)` },
           ml: { sm: 0 },
-
           background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
         }}
       >
@@ -201,6 +221,9 @@ const AdminDashboard = () => {
           <Route path="/users" element={<UserManagement />} />
           <Route path="/students" element={<StudentManagement />} />
           <Route path="/results" element={<ExamResults />} />
+          <Route path="/settings/profile" element={<div>Admin Profile Component</div>} />
+          <Route path="/settings/password" element={<div>Change Password Component</div>} />
+          <Route path="/settings/notifications" element={<div>Notifications Component</div>} />
         </Routes>
       </Box>
     </Box>
