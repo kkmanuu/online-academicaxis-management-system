@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate, Link } from "react-router-dom";
+
 import {
   Box,
   CssBaseline,
@@ -42,6 +43,7 @@ import ExamInterface from "./ExamInterface";
 import AvailableExams from "./AvailableExams";
 import MyResults from "./MyResults";
 import { format, parseISO } from "date-fns";
+const API_URL = process.env.REACT_APP_API_URL;
 
 const StudentDashboard = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -68,46 +70,46 @@ const StudentDashboard = () => {
   }, [isAuthenticated]);
 
   const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      const headers = getAuthHeader();
-      console.log("Fetch dashboard data - Auth headers:", headers);
+  try {
+    setLoading(true);
+    const headers = getAuthHeader();
+    console.log("Fetch dashboard data - Auth headers:", headers);
 
-      const response = await axios.get(
-        "http://localhost:5000/api/student/dashboard",
-        { headers }
-      );
-      console.log("Dashboard data response:", response.data);
+    const response = await axios.get(`${API_URL}/api/student/dashboard`, {
+      headers
+    });
+    console.log("Dashboard data response:", response.data);
 
-      setDashboardData({
-        stats: response.data.stats || {
-          enrolledCourses: 0,
-          completedExams: 0,
-          pendingExams: 0,
-          averageScore: 0,
-        },
-        results: response.data.results || [],
-        courses: response.data.courses || [],
-      });
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-      let errorMessage = "Failed to load dashboard data. Please try again.";
-      if (error.response) {
-        errorMessage =
-          error.response.data.message ||
-          `Error ${error.response.status}: Invalid request`;
-        if (error.response.status === 401 || error.response.status === 403) {
-          errorMessage = "Authentication failed. Please log in again.";
-        }
-      } else if (error.request) {
-        errorMessage =
-          "No response from server. Please check your network connection.";
+    setDashboardData({
+      stats: response.data.stats || {
+        enrolledCourses: 0,
+        completedExams: 0,
+        pendingExams: 0,
+        averageScore: 0,
+      },
+      results: response.data.results || [],
+      courses: response.data.courses || [],
+    });
+    setLoading(false);
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error);
+    let errorMessage = "Failed to load dashboard data. Please try again.";
+    if (error.response) {
+      errorMessage =
+        error.response.data.message ||
+        `Error ${error.response.status}: Invalid request`;
+      if (error.response.status === 401 || error.response.status === 403) {
+        errorMessage = "Authentication failed. Please log in again.";
       }
-      setError(errorMessage);
-      setLoading(false);
+    } else if (error.request) {
+      errorMessage =
+        "No response from server. Please check your network connection.";
     }
-  };
+    setError(errorMessage);
+    setLoading(false);
+  }
+};
+
 
   const handleLogout = () => {
     logout();
