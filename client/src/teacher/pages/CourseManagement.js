@@ -28,6 +28,9 @@ import {
 import { useAuth } from "../../shared/context/AuthContext";
 import axios from "axios";
 
+// ✅ Base URL from environment variable
+const API_URL = process.env.REACT_APP_API_URL;
+
 const CourseManagement = () => {
   const [courses, setCourses] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
@@ -47,12 +50,9 @@ const CourseManagement = () => {
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:5000/api/teacher/courses",
-        {
-          headers: getAuthHeader(),
-        }
-      );
+      const response = await axios.get(`${API_URL}/api/teacher/courses`, {
+        headers: getAuthHeader(),
+      });
       setCourses(response.data);
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -99,7 +99,7 @@ const CourseManagement = () => {
     try {
       if (selectedCourse) {
         await axios.put(
-          `http://localhost:5000/api/teacher/courses/${selectedCourse._id}`,
+          `${API_URL}/api/teacher/courses/${selectedCourse._id}`,
           formData,
           {
             headers: getAuthHeader(),
@@ -107,13 +107,9 @@ const CourseManagement = () => {
         );
         setSuccess("Course updated successfully");
       } else {
-        await axios.post(
-          "http://localhost:5000/api/teacher/courses",
-          formData,
-          {
-            headers: getAuthHeader(),
-          }
-        );
+        await axios.post(`${API_URL}/api/teacher/courses`, formData, {
+          headers: getAuthHeader(),
+        });
         setSuccess("Course created successfully");
       }
       handleCloseDialog();
@@ -129,12 +125,9 @@ const CourseManagement = () => {
   const handleDelete = async (courseId) => {
     if (window.confirm("Are you sure you want to delete this course?")) {
       try {
-        await axios.delete(
-          `http://localhost:5000/api/teacher/courses/${courseId}`,
-          {
-            headers: getAuthHeader(),
-          }
-        );
+        await axios.delete(`${API_URL}/api/teacher/courses/${courseId}`, {
+          headers: getAuthHeader(),
+        });
         setSuccess("Course deleted successfully");
         fetchCourses();
         setTimeout(() => setSuccess(""), 3000);
@@ -159,12 +152,7 @@ const CourseManagement = () => {
         </Alert>
       )}
 
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1">
           Course Management
         </Typography>
@@ -197,16 +185,10 @@ const CourseManagement = () => {
                 <TableCell>{course.students?.length || 0}</TableCell>
                 <TableCell>{course.isActive ? "Active" : "Inactive"}</TableCell>
                 <TableCell>
-                  <IconButton
-                    onClick={() => handleOpenDialog(course)}
-                    color="primary"
-                  >
+                  <IconButton onClick={() => handleOpenDialog(course)} color="primary">
                     <EditIcon />
                   </IconButton>
-                  <IconButton
-                    onClick={() => handleDelete(course._id)}
-                    color="error"
-                  >
+                  <IconButton onClick={() => handleDelete(course._id)} color="error">
                     <DeleteIcon />
                   </IconButton>
                 </TableCell>
@@ -216,15 +198,8 @@ const CourseManagement = () => {
         </Table>
       </TableContainer>
 
-      <Dialog
-        open={openDialog}
-        onClose={handleCloseDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {selectedCourse ? "Edit Course" : "Add New Course"}
-        </DialogTitle>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>{selectedCourse ? "Edit Course" : "Add New Course"}</DialogTitle>
         <DialogContent>
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
             <Grid container spacing={2}>
