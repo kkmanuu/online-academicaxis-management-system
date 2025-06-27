@@ -8,6 +8,7 @@ const examHandler = require('./websocket/examHandler');
 const app = express();
 const server = http.createServer(app);
 
+
 // Initialize WebSocket handler
 examHandler.initialize(server);
 
