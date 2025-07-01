@@ -1,4 +1,4 @@
-const WebSocket = require('ws');
+const WebSocket = require("ws");
 
 class ExamHandler {
   constructor() {
@@ -9,14 +9,14 @@ class ExamHandler {
   initialize(server) {
     const wss = new WebSocket.Server({ server });
 
-    wss.on('connection', (ws, req) => {
-      const params = new URLSearchParams(req.url.split('?')[1]);
-      const examId = params.get('examId');
-      const role = params.get('role');
-      const userId = params.get('userId');
+    wss.on("connection", (ws, req) => {
+      const params = new URLSearchParams(req.url.split("?")[1]);
+      const examId = params.get("examId");
+      const role = params.get("role");
+      const userId = params.get("userId");
 
       if (!examId || !role || !userId) {
-        ws.close(1008, 'Missing required parameters');
+        ws.close(1008, "Missing required parameters");
         return;
       }
 
@@ -33,30 +33,32 @@ class ExamHandler {
       this.examSessions.get(examId).set(userId, {
         role,
         ws,
-        connectionId
+        connectionId,
       });
 
       // Handle messages
-      ws.on('message', (message) => {
+      ws.on("message", (message) => {
         try {
           const data = JSON.parse(message);
           this.handleMessage(examId, userId, role, data);
         } catch (error) {
-          console.error('Error handling message:', error);
+          console.error("Error handling message:", error);
         }
       });
 
       // Handle connection close
-      ws.on('close', () => {
+      ws.on("close", () => {
         this.handleDisconnect(examId, userId, connectionId);
       });
 
       // Send initial connection success message
-      ws.send(JSON.stringify({
-        type: 'connection',
-        status: 'success',
-        message: 'Connected to exam monitoring system'
-      }));
+      ws.send(
+        JSON.stringify({
+          type: "connection",
+          status: "success",
+          message: "Connected to exam monitoring system",
+        })
+      );
     });
   }
 
@@ -65,58 +67,66 @@ class ExamHandler {
     if (!session) return;
 
     switch (data.type) {
-      case 'offer':
+      case "offer":
         // Handle WebRTC offer from student
-        if (role === 'student') {
+        if (role === "student") {
           // Broadcast to all teachers in the exam
           session.forEach((user, id) => {
-            if (user.role === 'teacher') {
-              user.ws.send(JSON.stringify({
-                type: 'offer',
-                studentId: userId,
-                offer: data.offer
-              }));
+            if (user.role === "teacher") {
+              user.ws.send(
+                JSON.stringify({
+                  type: "offer",
+                  studentId: userId,
+                  offer: data.offer,
+                })
+              );
             }
           });
         }
         break;
 
-      case 'answer':
+      case "answer":
         // Handle WebRTC answer from teacher
-        if (role === 'teacher') {
+        if (role === "teacher") {
           const student = session.get(data.studentId);
           if (student) {
-            student.ws.send(JSON.stringify({
-              type: 'answer',
-              teacherId: userId,
-              answer: data.answer
-            }));
+            student.ws.send(
+              JSON.stringify({
+                type: "answer",
+                teacherId: userId,
+                answer: data.answer,
+              })
+            );
           }
         }
         break;
 
-      case 'ice-candidate':
+      case "ice-candidate":
         // Handle ICE candidate
-        if (role === 'student') {
+        if (role === "student") {
           // Send to all teachers
           session.forEach((user, id) => {
-            if (user.role === 'teacher') {
-              user.ws.send(JSON.stringify({
-                type: 'ice-candidate',
-                studentId: userId,
-                candidate: data.candidate
-              }));
+            if (user.role === "teacher") {
+              user.ws.send(
+                JSON.stringify({
+                  type: "ice-candidate",
+                  studentId: userId,
+                  candidate: data.candidate,
+                })
+              );
             }
           });
-        } else if (role === 'teacher') {
+        } else if (role === "teacher") {
           // Send to specific student
           const student = session.get(data.studentId);
           if (student) {
-            student.ws.send(JSON.stringify({
-              type: 'ice-candidate',
-              teacherId: userId,
-              candidate: data.candidate
-            }));
+            student.ws.send(
+              JSON.stringify({
+                type: "ice-candidate",
+                teacherId: userId,
+                candidate: data.candidate,
+              })
+            );
           }
         }
         break;
@@ -134,10 +144,12 @@ class ExamHandler {
 
       // Notify other users in the exam
       session.forEach((user) => {
-        user.ws.send(JSON.stringify({
-          type: 'user-disconnected',
-          userId: userId
-        }));
+        user.ws.send(
+          JSON.stringify({
+            type: "user-disconnected",
+            userId: userId,
+          })
+        );
       });
 
       // Clean up empty sessions
@@ -148,4 +160,4 @@ class ExamHandler {
   }
 }
 
-module.exports = new ExamHandler(); 
+module.exports = new ExamHandler();
