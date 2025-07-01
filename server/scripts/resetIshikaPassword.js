@@ -1,48 +1,48 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-require('dotenv').config();
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+require("dotenv").config();
 
 // Define User model
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   email: {
     type: String,
     required: true,
     unique: true,
     trim: true,
-    lowercase: true
+    lowercase: true,
   },
   password: {
     type: String,
-    required: true
+    required: true,
   },
   role: {
     type: String,
-    enum: ['admin', 'teacher', 'student'],
-    required: true
+    enum: ["admin", "teacher", "student"],
+    required: true,
   },
   isBlocked: {
     type: Boolean,
-    default: false
+    default: false,
   },
   createdAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 
 // Connect to MongoDB
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
-      useUnifiedTopology: true
+      useUnifiedTopology: true,
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     return conn;
@@ -56,30 +56,30 @@ const connectDB = async () => {
 const resetPassword = async () => {
   try {
     await connectDB();
-    
-    const email = 'ishika@gmail.com';
-    const newPassword = 'password123';
-    
+
+    const email = "ishika@gmail.com";
+    const newPassword = "password123";
+
     // Find the user
     const user = await User.findOne({ email });
     if (!user) {
       console.log(`User with email ${email} not found`);
       process.exit(1);
     }
-    
+
     // Update password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
     user.password = hashedPassword;
     await user.save();
-    
+
     console.log(`Password reset successfully for user ${email}`);
     console.log(`New password: ${newPassword}`);
     process.exit(0);
   } catch (error) {
-    console.error('Error resetting password:', error);
+    console.error("Error resetting password:", error);
     process.exit(1);
   }
 };
 
-resetPassword(); 
+resetPassword();
