@@ -12,7 +12,13 @@ const server = http.createServer(app);
 examHandler.initialize(server);
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:3000", // For local development
+    "https://your-frontend.onrender.com" // Replace with your actual frontend Render URL after deployment
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // Routes
@@ -23,8 +29,7 @@ app.use("/api/student", require("./routes/student"));
 app.use("/api/exams", require("./routes/exam"));
 
 // MongoDB connection
-const mongoURI =
-  process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/academicaxis";
+const mongoURI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/academicaxis";
 
 mongoose
   .connect(mongoURI, {
