@@ -32,6 +32,7 @@ import QuestionManagement from './QuestionManagement';
 import StudentEnrollment from './StudentEnrollment';
 import CourseManagement from './CourseManagement';
 import StudentResults from './StudentResults';
+import ExamMonitoring from './ExamMonitoring';
 
 const drawerWidth = 240;
 
@@ -48,7 +49,7 @@ const TeacherDashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/teacher/statistics', {
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/teacher/statistics`, {
           headers: getAuthHeader()
         });
         const { totalCourses, totalExams, totalStudents } = response.data;
@@ -85,7 +86,8 @@ const TeacherDashboard = () => {
           { text: 'Dashboard', icon: <DashboardIcon />, to: '/teacher' },
           { text: 'Exam Management', icon: <ExamIcon />, to: '/teacher/exams' },
           { text: 'Course Management', icon: <CourseIcon />, to: '/teacher/courses' },
-          { text: 'Student Results', icon: <ResultsIcon />, to: '/teacher/results' }
+          { text: 'Student Results', icon: <ResultsIcon />, to: '/teacher/results' },
+          { text: 'Exam Monitoring', icon: <ExamIcon />, to: '/teacher/exams/monitor' }
         ].map((item) => (
           <ListItem
             button
@@ -252,6 +254,7 @@ const TeacherDashboard = () => {
           <Route path="/courses" element={<CourseManagement />} />
           <Route path="/results" element={<StudentResults />} />
           <Route path="/results/:examId" element={<StudentResults />} />
+          <Route path="/exams/monitor" element={<ExamMonitoring />} />
         </Routes>
       </Box>
     </Box>
