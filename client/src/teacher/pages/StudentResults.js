@@ -17,10 +17,10 @@ import {
   TextField,
   InputAdornment,
   IconButton,
-  Divider
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import axios from 'axios';
+import { useAuth } from '../../shared/context/AuthContext';
 
 const StudentResults = () => {
   const { examId } = useParams();
@@ -28,6 +28,7 @@ const StudentResults = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const { getAuthHeader } = useAuth();
 
   useEffect(() => {
     if (examId) {
@@ -39,10 +40,10 @@ const StudentResults = () => {
 
   const fetchExamResults = async (id) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/teacher/exams/${id}/results`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      console.log('Exam results fetched:', response.data);
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/teacher/exams/${id}/results`,
+        { headers: getAuthHeader() }
+      );
       setResults(response.data);
       setLoading(false);
     } catch (error) {
@@ -54,10 +55,10 @@ const StudentResults = () => {
 
   const fetchAllResults = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/teacher/results', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      console.log('All results fetched:', response.data);
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/teacher/results`,
+        { headers: getAuthHeader() }
+      );
       setResults(response.data);
       setLoading(false);
     } catch (error) {
@@ -140,7 +141,6 @@ const StudentResults = () => {
             </TableHead>
             <TableBody>
               {filteredResults.map((result) => (
-                
                 <TableRow key={result._id}>
                   <TableCell>{result.student ? result.student.name : 'Unknown'}</TableCell>
                   <TableCell>{result.exam ? result.exam.title : 'Unknown'}</TableCell>
@@ -165,4 +165,4 @@ const StudentResults = () => {
   );
 };
 
-export default StudentResults; 
+export default StudentResults;
