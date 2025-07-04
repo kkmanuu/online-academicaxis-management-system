@@ -61,7 +61,7 @@ const ExamManagement = () => {
   const fetchExams = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/exams/teacher",
+        `${process.env.REACT_APP_API_URL}/api/exams/teacher`,
         {
           headers: getAuthHeader(),
         }
@@ -75,7 +75,7 @@ const ExamManagement = () => {
   const fetchCourses = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/teacher/courses",
+        `${process.env.REACT_APP_API_URL}/api/teacher/courses`,
         {
           headers: getAuthHeader(),
         }
@@ -140,18 +140,16 @@ const ExamManagement = () => {
 
       if (selectedExam) {
         await axios.put(
-          `http://localhost:5000/api/exams/${selectedExam._id}`,
+          `${process.env.REACT_APP_API_URL}/api/exams/${selectedExam._id}`,
           formattedData,
-          {
-            headers,
-          }
+          { headers }
         );
       } else {
         if (!formData.courseId) {
           alert("Please select a course");
           return;
         }
-        await axios.post("http://localhost:5000/api/exams", formattedData, {
+        await axios.post(`${process.env.REACT_APP_API_URL}/api/exams`, formattedData, {
           headers,
         });
       }
@@ -168,7 +166,7 @@ const ExamManagement = () => {
   const handleDelete = async (examId) => {
     if (window.confirm("Are you sure you want to delete this exam?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/exams/${examId}`, {
+        await axios.delete(`${process.env.REACT_APP_API_URL}/api/exams/${examId}`, {
           headers: getAuthHeader(),
         });
         fetchExams();
@@ -198,7 +196,9 @@ const ExamManagement = () => {
         alignItems="center"
         mb={3}
       >
-        <Typography variant="h4" fontWeight="bold" color="primary.main">
+        <Typography variant="h4" font
+
+Weight="bold" color="primary.main">
           Exam Management
         </Typography>
         <Button
