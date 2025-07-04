@@ -14,7 +14,8 @@ import {
   Checkbox,
   IconButton,
   TextField,
-  InputAdornment
+  InputAdornment,
+  Alert
 } from '@mui/material';
 import { Search as SearchIcon, Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
 import { useAuth } from '../../shared/context/AuthContext';
@@ -26,6 +27,8 @@ const StudentEnrollment = () => {
   const [enrolledStudents, setEnrolledStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudents, setSelectedStudents] = useState([]);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const { examId } = useParams();
   const { getAuthHeader } = useAuth();
@@ -37,23 +40,25 @@ const StudentEnrollment = () => {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/admin/students', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/admin/students`, {
         headers: getAuthHeader()
       });
       setStudents(response.data);
     } catch (error) {
       console.error('Error fetching students:', error);
+      setError('Failed to fetch students. Please try again.');
     }
   };
 
   const fetchEnrolledStudents = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/exams/${examId}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/exams/${examId}`, {
         headers: getAuthHeader()
       });
       setEnrolledStudents(response.data.enrolledStudents || []);
     } catch (error) {
       console.error('Error fetching enrolled students:', error);
+      setError('Failed to fetch enrolled students. Please try again.');
     }
   };
 
@@ -90,24 +95,36 @@ const StudentEnrollment = () => {
 
   const handleEnrollStudents = async () => {
     try {
-      await axios.post(`http://localhost:5000/api/exams/${examId}/enroll`, {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/exams/${examId}/enroll`, {
         studentIds: selectedStudents
       }, {
         headers: getAuthHeader()
       });
+      setSuccess('Students enrolled successfully!');
       fetchEnrolledStudents();
       setSelectedStudents([]);
+      setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error enrolling students:', error);
+      setError(error.response?.data?.message || 'Failed to enroll students. Please try again.');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
   const handleRemoveStudent = async (studentId) => {
     try {
-      // Remove student logic here
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/exams/${examId}/unenroll`, {
+        studentId
+      }, {
+        headers: getAuthHeader()
+      });
+      setSuccess('Student removed successfully!');
       fetchEnrolledStudents();
+      setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
       console.error('Error removing student:', error);
+      setError(error.response?.data?.message || 'Failed to remove student. Please try again.');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
@@ -121,6 +138,17 @@ const StudentEnrollment = () => {
       <Typography variant="h4" component="h1" gutterBottom>
         Student Enrollment
       </Typography>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
 
       <Box mb={4}>
         <Typography variant="h6" gutterBottom>
@@ -217,18 +245,17 @@ const StudentEnrollment = () => {
                     <IconButton
                       color="error"
                       onClick={() => handleRemoveStudent(student._id)}
-                    >
+                    />
                       <RemoveIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
-    </Container>
-  );
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      </Container>
+    );
 };
 
-export default StudentEnrollment; 
+export default StudentEnrollment;
