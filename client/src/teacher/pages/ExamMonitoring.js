@@ -41,7 +41,7 @@ const ExamMonitoring = () => {
   useEffect(() => {
     if (exam) {
       // Initialize WebSocket connection
-      websocketService.connect(examId, 'teacher', user.id);
+      websocketService.connect(examId, 'teacher', user.id, `${process.env.REACT_APP_API_URL.replace('https', 'wss')}`);
       
       // Set up message handler
       websocketService.setOnMessageCallback((message) => {
@@ -51,17 +51,18 @@ const ExamMonitoring = () => {
         }
       });
     }
-  }, [exam]);
+  }, [exam, user.id]);
 
   const fetchExamDetails = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/exams/${examId}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/exams/${examId}`, {
         headers: getAuthHeader()
       });
       setExam(response.data);
       setActiveStudents(response.data.enrolledStudents || []);
       setLoading(false);
     } catch (error) {
+      console.error('Error fetching exam details:', error);
       setError(error.response?.data?.message || 'Failed to load exam details');
       setLoading(false);
     }
@@ -154,4 +155,4 @@ const ExamMonitoring = () => {
   );
 };
 
-export default ExamMonitoring; 
+export default ExamMonitoring;
