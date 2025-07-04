@@ -50,10 +50,10 @@ const QuestionManagement = () => {
 
   const fetchQuestions = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/exams/${examId}`, {
-        headers: getAuthHeader()
-      });
-      console.log('Fetched exam data:', response.data);
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/exams/${examId}`,
+        { headers: getAuthHeader() }
+      );
       setQuestions(response.data.questions || []);
     } catch (error) {
       console.error('Error fetching questions:', error);
@@ -63,15 +63,11 @@ const QuestionManagement = () => {
 
   const verifyExamOwnership = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/exams/${examId}`, {
-        headers: getAuthHeader()
-      });
-      console.log('Exam data:', response.data);
-      console.log('Teacher ID from exam:', response.data.teacher._id);
-      console.log('Current user ID:', user._id);
-
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/exams/${examId}`,
+        { headers: getAuthHeader() }
+      );
       if (response.data.teacher._id !== user._id) {
-        console.error('Exam does not belong to the current teacher');
         alert('You are not authorized to manage questions for this exam');
         navigate('/teacher/exams');
       }
@@ -153,31 +149,23 @@ const QuestionManagement = () => {
     if (!validateForm()) return;
 
     try {
-      console.log('Submitting question for exam:', examId);
-      console.log('Question data:', formData);
-
       if (selectedQuestion) {
-        // Update question
-        const response = await axios.put(
-          `http://localhost:5000/api/questions/${selectedQuestion._id}`,
+        await axios.put(
+          `${process.env.REACT_APP_API_URL}/api/exams/${examId}/questions/${selectedQuestion._id}`,
           { ...formData, exam: examId },
           { headers: getAuthHeader() }
         );
-        console.log('Question updated successfully:', response.data);
       } else {
-        // Add new question
-        const response = await axios.post(
-          `http://localhost:5000/api/exams/${examId}/questions`,
+        await axios.post(
+          `${process.env.REACT_APP_API_URL}/api/exams/${examId}/questions`,
           formData,
           { headers: getAuthHeader() }
         );
-        console.log('Question added successfully:', response.data);
       }
       fetchQuestions();
       handleCloseDialog();
     } catch (error) {
       console.error('Error saving question:', error);
-      console.error('Error details:', error.response?.data);
       setError(`Failed to save question: ${error.response?.data?.message || error.message}`);
     }
   };
@@ -185,10 +173,10 @@ const QuestionManagement = () => {
   const handleDelete = async (questionId) => {
     if (window.confirm('Are you sure you want to delete this question?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/questions/${questionId}`, {
-          headers: getAuthHeader()
-        });
-        console.log('Question deleted successfully:', questionId);
+        await axios.delete(
+          `${process.env.REACT_APP_API_URL}/api/exams/${examId}/questions/${questionId}`,
+          { headers: getAuthHeader() }
+        );
         fetchQuestions();
       } catch (error) {
         console.error('Error deleting question:', error);
@@ -196,7 +184,6 @@ const QuestionManagement = () => {
       }
     }
   };
-
 
   return (
     <Container maxWidth="md" sx={{ mt: 5, mb: 5 }}>
