@@ -4,13 +4,28 @@ import { Box, CircularProgress } from '@mui/material';
 
 const AuthContext = createContext(null);
 
-// ✅ Get API base URL from .env
 const API_URL = process.env.REACT_APP_API_URL;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Configure axios interceptor for auth headers
+  useEffect(() => {
+    const interceptor = axios.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+          config.headers['Authorization'] = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    return () => axios.interceptors.request.eject(interceptor);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -23,22 +38,24 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      if (!API_URL) {
+        setError('API URL is not configured');
         setLoading(false);
         return;
       }
 
-      const response = await axios.get(`${API_URL}/api/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await axios.get(`${API_URL}/api/auth/me`);
 
       setUser(response.data);
       setError(null);
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error fetching user profile:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+        });
+      }
       if (error.response && error.response.status === 401) {
         localStorage.removeItem('token');
         setUser(null);
@@ -53,38 +70,50 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
 
+      if (!API_URL) {
+        setError('API URL is not configured');
+        return { success: false, error: 'API URL is not configured' };
+      }
+
       if (!email || !password) {
         setError('Email and password are required');
         return { success: false, error: 'Email and password are required' };
       }
 
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Login request to:', `${API_URL}/api/auth/login`);
+        console.log('Login payload:', { email, role });
+      }
+
       const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password,
-        role
+        role,
       });
 
       const { token, user } = response.data;
-
-      if (token && user) {
-        localStorage.setItem('token', token);
-        setUser(user);
-        return { success: true, user };
-      } else {
-        const errorMsg = 'Invalid response from server';
-        setError(errorMsg);
-        return {
-          success: false,
-          error: errorMsg
-        };
+      if (!token || !user) {
+        throw new Error('Invalid response format from server');
       }
+
+      localStorage.setItem('token', token);
+      setUser(user);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Login successful, user:', user);
+      }
+      return { success: true, user };
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Login failed. Please check your credentials.';
+      const errorMessage =
+        error.response?.data?.message || 'Login failed. Please check your credentials.';
       setError(errorMessage);
-      return {
-        success: false,
-        error: errorMessage
-      };
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Login error:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+        });
+      }
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -97,10 +126,12 @@ export const AuthProvider = ({ children }) => {
   const getAuthHeader = () => {
     const token = localStorage.getItem('token');
     if (!token) {
-      console.warn('No auth token found in localStorage');
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('No auth token found in localStorage');
+      }
       return {};
     }
-    return { 'Authorization': `Bearer ${token}` };
+    return { Authorization: `Bearer ${token}` };
   };
 
   const isAuthenticated = () => !!user;

@@ -18,6 +18,8 @@ import {
 } from "@mui/material";
 import SchoolIcon from "@mui/icons-material/School";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const Login = () => {
   const navigate = useNavigate();
   const { login, error: authError } = useAuth();
@@ -36,10 +38,21 @@ const Login = () => {
     });
   };
 
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    if (!API_URL) {
+      setError("API URL is not configured. Please contact the administrator.");
+      setLoading(false);
+      return;
+    }
 
     if (!formData.email || !formData.password) {
       setError("Email and password are required");
@@ -47,21 +60,19 @@ const Login = () => {
       return;
     }
 
+    if (!validateEmail(formData.email)) {
+      setError("Please enter a valid email address");
+      setLoading(false);
+      return;
+    }
+
     try {
-      console.log(
-        "Submitting login form with email:",
-        formData.email,
-        "and role:",
-        formData.role
-      );
-      const result = await login(
-        formData.email,
-        formData.password,
-        formData.role
-      );
+      console.log("Login request to:", `${API_URL}/api/auth/login`);
+      console.log("Login payload:", { email: formData.email, role: formData.role });
+      const result = await login(formData.email, formData.password, formData.role);
 
       if (result.success) {
-        console.log("Login successful, redirecting to dashboard");
+        console.log("Login successful, user:", result.user);
         if (result.user.role === "admin") {
           navigate("/admin/dashboard");
         } else if (result.user.role === "teacher") {
@@ -71,12 +82,14 @@ const Login = () => {
         }
       } else {
         console.error("Login failed:", result.error);
-        setError(
-          result.error || "Login failed. Please check your credentials."
-        );
+        setError(result.error || "Login failed. Please check your credentials.");
       }
     } catch (err) {
-      console.error("Login error:", err);
+      console.error("Login error:", {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+      });
       setError(err.message || "An error occurred during login.");
     } finally {
       setLoading(false);
