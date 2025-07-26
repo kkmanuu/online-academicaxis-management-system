@@ -18,6 +18,8 @@ import {
 } from '@mui/material';
 import SchoolIcon from '@mui/icons-material/School';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const Register = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -42,14 +44,12 @@ const Register = () => {
     setLoading(true);
     setError('');
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       setLoading(false);
       return;
     }
 
-    // Validate password length
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters long');
       setLoading(false);
@@ -57,26 +57,24 @@ const Register = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', {
+      const response = await axios.post(`${API_URL}/api/auth/register`, {
         name: formData.name,
         email: formData.email,
         password: formData.password,
         role: formData.role
       });
 
-      // Store token and redirect
       localStorage.setItem('token', response.data.token);
-      
-      // Redirect based on role
+
       if (response.data.user.role === 'admin') {
         navigate('/admin/dashboard');
       } else if (response.data.user.role === 'teacher') {
         navigate('/teacher/dashboard');
-      } else if (response.data.user.role === 'student') {
+      } else {
         navigate('/student/dashboard');
       }
     } catch (err) {
-      console.error('Registration error:', err);
+      console.error('Registration error:', err?.response?.data || err.message);
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
@@ -101,20 +99,10 @@ const Register = () => {
           alt="EduConnect Dashboard"
           sx={{ width: 80, height: 80, mb: 2, border: '2px solid #fff', boxShadow: 3 }}
         />
-        <Typography
-          component="h1"
-          variant="h5"
-          align="center"
-          gutterBottom
-          sx={{ fontWeight: 'bold', color: '#1a237e' }}
-        >
+        <Typography component="h1" variant="h5" align="center" gutterBottom sx={{ fontWeight: 'bold', color: '#1a237e' }}>
           EduConnect Dashboard
         </Typography>
-        <Typography
-          variant="subtitle2"
-          align="center"
-          sx={{ mb: 2, color: '#455a64' }}
-        >
+        <Typography variant="subtitle2" align="center" sx={{ mb: 2, color: '#455a64' }}>
           Register to start your learning journey
         </Typography>
         <Paper
@@ -147,13 +135,7 @@ const Register = () => {
               onChange={handleChange}
               disabled={loading}
               variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 1,
-                  '&:hover fieldset': { borderColor: '#3f51b5' },
-                  '&.Mui-focused fieldset': { borderColor: '#3f51b5' }
-                }
-              }}
+              sx={outlinedInputStyle}
             />
             <TextField
               margin="dense"
@@ -167,13 +149,7 @@ const Register = () => {
               onChange={handleChange}
               disabled={loading}
               variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 1,
-                  '&:hover fieldset': { borderColor: '#3f51b5' },
-                  '&.Mui-focused fieldset': { borderColor: '#3f51b5' }
-                }
-              }}
+              sx={outlinedInputStyle}
             />
             <TextField
               margin="dense"
@@ -188,13 +164,7 @@ const Register = () => {
               onChange={handleChange}
               disabled={loading}
               variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 1,
-                  '&:hover fieldset': { borderColor: '#3f51b5' },
-                  '&.Mui-focused fieldset': { borderColor: '#3f51b5' }
-                }
-              }}
+              sx={outlinedInputStyle}
             />
             <TextField
               margin="dense"
@@ -209,13 +179,7 @@ const Register = () => {
               onChange={handleChange}
               disabled={loading}
               variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 1,
-                  '&:hover fieldset': { borderColor: '#3f51b5' },
-                  '&.Mui-focused fieldset': { borderColor: '#3f51b5' }
-                }
-              }}
+              sx={outlinedInputStyle}
             />
             <FormControl fullWidth margin="dense">
               <InputLabel id="role-label">Role</InputLabel>
@@ -241,16 +205,7 @@ const Register = () => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{
-                mt: 2,
-                mb: 1,
-                py: 1,
-                borderRadius: 1,
-                backgroundColor: '#3f51b5',
-                '&:hover': { backgroundColor: '#303f9f' },
-                textTransform: 'none',
-                fontSize: '0.9rem'
-              }}
+              sx={submitButtonStyle}
               disabled={loading}
               startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SchoolIcon />}
             >
@@ -261,15 +216,7 @@ const Register = () => {
               variant="outlined"
               onClick={() => navigate('/login')}
               disabled={loading}
-              sx={{
-                py: 1,
-                borderRadius: 1,
-                borderColor: '#3f51b5',
-                color: '#3f51b5',
-                textTransform: 'none',
-                fontSize: '0.9rem',
-                '&:hover': { backgroundColor: '#f5f5f5', borderColor: '#303f9f' }
-              }}
+              sx={loginButtonStyle}
             >
               Already have an account? Login
             </Button>
@@ -278,6 +225,35 @@ const Register = () => {
       </Box>
     </Container>
   );
+};
+
+const outlinedInputStyle = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 1,
+    '&:hover fieldset': { borderColor: '#3f51b5' },
+    '&.Mui-focused fieldset': { borderColor: '#3f51b5' }
+  }
+};
+
+const submitButtonStyle = {
+  mt: 2,
+  mb: 1,
+  py: 1,
+  borderRadius: 1,
+  backgroundColor: '#3f51b5',
+  '&:hover': { backgroundColor: '#303f9f' },
+  textTransform: 'none',
+  fontSize: '0.9rem'
+};
+
+const loginButtonStyle = {
+  py: 1,
+  borderRadius: 1,
+  borderColor: '#3f51b5',
+  color: '#3f51b5',
+  textTransform: 'none',
+  fontSize: '0.9rem',
+  '&:hover': { backgroundColor: '#f5f5f5', borderColor: '#303f9f' }
 };
 
 export default Register;
