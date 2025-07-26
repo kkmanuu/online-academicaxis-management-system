@@ -15,7 +15,7 @@ examHandler.initialize(server);
 app.use(cors({
   origin: [
     "http://localhost:3000", // For local development
-    "https://your-frontend.onrender.com" // Replace with your actual frontend Render URL after deployment
+    "https://academicaxissystem.onrender.com" // Replace with your actual frontend Render URL after deployment
   ],
   credentials: true
 }));
