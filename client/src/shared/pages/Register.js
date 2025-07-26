@@ -1,23 +1,27 @@
 import React, { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   Container,
-  Box,
-  Typography,
+  Paper,
   TextField,
   Button,
-  Link,
-  Paper,
-  Grid,
+  Typography,
+  Box,
+  Alert,
+  CircularProgress,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Alert
+  Avatar
 } from '@mui/material';
-import { useAuth } from '../context/AuthContext';
+import SchoolIcon from '@mui/icons-material/School';
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 const Register = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -25,73 +29,101 @@ const Register = () => {
     confirmPassword: '',
     role: 'student'
   });
-  const [formError, setFormError] = useState('');
-  
-  const { register, error } = useAuth();
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError('');
-    
-    // Validate passwords match
+    setLoading(true);
+    setError('');
+
     if (formData.password !== formData.confirmPassword) {
-      setFormError('Passwords do not match');
+      setError('Passwords do not match');
+      setLoading(false);
       return;
     }
-    
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const { confirmPassword, ...userData } = formData;
-      const user = await register(userData);
-      
-      // Redirect based on role
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else if (user.role === 'teacher') {
-        navigate('/teacher');
+      const response = await axios.post(`${API_URL}/api/auth/register`, {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role
+      });
+
+      localStorage.setItem('token', response.data.token);
+
+      if (response.data.user.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else if (response.data.user.role === 'teacher') {
+        navigate('/teacher/dashboard');
       } else {
-        navigate('/student');
+        navigate('/student/dashboard');
       }
-    } catch (error) {
-      setFormError(error.response?.data?.message || 'Registration failed');
+    } catch (err) {
+      console.error('Registration error:', err?.response?.data || err.message);
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Container component="main" maxWidth="xs">
+    <Container component="main" maxWidth="xs" sx={{ mt: 4, mb: 2 }}>
       <Box
         sx={{
-          marginTop: 8,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+          background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+          borderRadius: 2,
+          py: 3,
+          px: 2
         }}
       >
-        <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
-          <Typography component="h1" variant="h5" align="center" gutterBottom>
-            Online Examination System
-          </Typography>
-          <Typography component="h2" variant="h6" align="center" gutterBottom>
-            Register
-          </Typography>
-          
-          {(error || formError) && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {formError || error}
+        <Avatar
+          src="https://images.unsplash.com/photo-1516321310764-8d9a662d6929?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+          alt="EduConnect Dashboard"
+          sx={{ width: 80, height: 80, mb: 2, border: '2px solid #fff', boxShadow: 3 }}
+        />
+        <Typography component="h1" variant="h5" align="center" gutterBottom sx={{ fontWeight: 'bold', color: '#1a237e' }}>
+          EduConnect Dashboard
+        </Typography>
+        <Typography variant="subtitle2" align="center" sx={{ mb: 2, color: '#455a64' }}>
+          Register to start your learning journey
+        </Typography>
+        <Paper
+          elevation={6}
+          sx={{
+            p: 3,
+            width: '100%',
+            borderRadius: 2,
+            backgroundColor: '#ffffff',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+          }}
+        >
+          {error && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 1 }}>
+              {error}
             </Alert>
           )}
-          
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+
+          <form onSubmit={handleSubmit}>
             <TextField
-              margin="normal"
+              margin="dense"
               required
               fullWidth
               id="name"
@@ -101,9 +133,12 @@ const Register = () => {
               autoFocus
               value={formData.name}
               onChange={handleChange}
+              disabled={loading}
+              variant="outlined"
+              sx={outlinedInputStyle}
             />
             <TextField
-              margin="normal"
+              margin="dense"
               required
               fullWidth
               id="email"
@@ -112,9 +147,12 @@ const Register = () => {
               autoComplete="email"
               value={formData.email}
               onChange={handleChange}
+              disabled={loading}
+              variant="outlined"
+              sx={outlinedInputStyle}
             />
             <TextField
-              margin="normal"
+              margin="dense"
               required
               fullWidth
               name="password"
@@ -124,9 +162,12 @@ const Register = () => {
               autoComplete="new-password"
               value={formData.password}
               onChange={handleChange}
+              disabled={loading}
+              variant="outlined"
+              sx={outlinedInputStyle}
             />
             <TextField
-              margin="normal"
+              margin="dense"
               required
               fullWidth
               name="confirmPassword"
@@ -136,16 +177,25 @@ const Register = () => {
               autoComplete="new-password"
               value={formData.confirmPassword}
               onChange={handleChange}
+              disabled={loading}
+              variant="outlined"
+              sx={outlinedInputStyle}
             />
-            <FormControl fullWidth margin="normal">
-              <InputLabel id="role-label">Register As</InputLabel>
+            <FormControl fullWidth margin="dense">
+              <InputLabel id="role-label">Role</InputLabel>
               <Select
                 labelId="role-label"
                 id="role"
                 name="role"
                 value={formData.role}
-                label="Register As"
+                label="Role"
                 onChange={handleChange}
+                disabled={loading}
+                sx={{
+                  borderRadius: 1,
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#3f51b5' },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3f51b5' }
+                }}
               >
                 <MenuItem value="student">Student</MenuItem>
                 <MenuItem value="teacher">Teacher</MenuItem>
@@ -155,22 +205,55 @@ const Register = () => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              sx={submitButtonStyle}
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SchoolIcon />}
             >
-              Sign Up
+              {loading ? 'Registering...' : 'Register'}
             </Button>
-            <Grid container justifyContent="flex-end">
-              <Grid item>
-                <Link component={RouterLink} to="/login" variant="body2">
-                  {"Already have an account? Sign In"}
-                </Link>
-              </Grid>
-            </Grid>
-          </Box>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={() => navigate('/login')}
+              disabled={loading}
+              sx={loginButtonStyle}
+            >
+              Already have an account? Login
+            </Button>
+          </form>
         </Paper>
       </Box>
     </Container>
   );
 };
 
-export default Register; 
+const outlinedInputStyle = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 1,
+    '&:hover fieldset': { borderColor: '#3f51b5' },
+    '&.Mui-focused fieldset': { borderColor: '#3f51b5' }
+  }
+};
+
+const submitButtonStyle = {
+  mt: 2,
+  mb: 1,
+  py: 1,
+  borderRadius: 1,
+  backgroundColor: '#3f51b5',
+  '&:hover': { backgroundColor: '#303f9f' },
+  textTransform: 'none',
+  fontSize: '0.9rem'
+};
+
+const loginButtonStyle = {
+  py: 1,
+  borderRadius: 1,
+  borderColor: '#3f51b5',
+  color: '#3f51b5',
+  textTransform: 'none',
+  fontSize: '0.9rem',
+  '&:hover': { backgroundColor: '#f5f5f5', borderColor: '#303f9f' }
+};
+
+export default Register;
