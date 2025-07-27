@@ -19,6 +19,8 @@ import axios from "axios";
 import { useAuth } from "../../shared/context/AuthContext";
 import { format, parseISO } from "date-fns";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const MyResults = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,11 @@ const MyResults = () => {
   const { getAuthHeader, isAuthenticated } = useAuth();
 
   useEffect(() => {
+    if (!API_URL) {
+      setError("API URL is not configured. Please contact the administrator.");
+      setLoading(false);
+      return;
+    }
     if (!isAuthenticated()) {
       setError("Please log in to view your results.");
       navigate("/login");
@@ -40,20 +47,29 @@ const MyResults = () => {
       const headers = getAuthHeader();
       console.log("Auth headers:", headers);
       const response = await axios.get(
-        "http://localhost:5000/api/student/results",
+        `${API_URL}/api/student/results`,
         {
           headers,
+          timeout: 30000,
         }
       );
       console.log("Results fetched:", response.data);
       setResults(Array.isArray(response.data) ? response.data : []);
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching results:", error);
-      setError(
-        error.response?.data?.message ||
-          "Failed to load results. Please try again."
-      );
+      console.error("Error fetching results:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        code: error.code,
+      });
+      let errorMessage = error.response?.data?.message || error.message;
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = "Request timed out. Please try again in a moment.";
+      } else if (error.message.includes("Network Error")) {
+        errorMessage = "Unable to connect to the server. Please check your internet connection or try again later.";
+      }
+      setError(errorMessage || "Failed to load results. Please try again.");
       setLoading(false);
     }
   };
