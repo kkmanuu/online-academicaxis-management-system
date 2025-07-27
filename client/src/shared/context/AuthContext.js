@@ -3,7 +3,6 @@ import axios from 'axios';
 import { Box, CircularProgress } from '@mui/material';
 
 const AuthContext = createContext(null);
-
 const API_URL = process.env.REACT_APP_API_URL;
 
 export const AuthProvider = ({ children }) => {
@@ -11,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Configure axios interceptor for auth headers
+  // Attach auth token to every request
   useEffect(() => {
     const interceptor = axios.interceptors.request.use(
       (config) => {
@@ -27,6 +26,7 @@ export const AuthProvider = ({ children }) => {
     return () => axios.interceptors.request.eject(interceptor);
   }, []);
 
+  // Load user profile from token on mount
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -45,22 +45,17 @@ export const AuthProvider = ({ children }) => {
       }
 
       const response = await axios.get(`${API_URL}/api/auth/me`);
-
       setUser(response.data);
       setError(null);
     } catch (error) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('Error fetching user profile:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-        });
-      }
-      if (error.response && error.response.status === 401) {
+      if (error.response?.status === 401) {
         localStorage.removeItem('token');
         setUser(null);
       }
-      setError(error.response?.data?.message || 'Failed to fetch user profile');
+
+      setError(
+        error.response?.data?.message || 'Failed to fetch user profile'
+      );
     } finally {
       setLoading(false);
     }
@@ -73,16 +68,6 @@ export const AuthProvider = ({ children }) => {
       if (!API_URL) {
         setError('API URL is not configured');
         return { success: false, error: 'API URL is not configured' };
-      }
-
-      if (!email || !password) {
-        setError('Email and password are required');
-        return { success: false, error: 'Email and password are required' };
-      }
-
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Login request to:', `${API_URL}/api/auth/login`);
-        console.log('Login payload:', { email, role });
       }
 
       const response = await axios.post(`${API_URL}/api/auth/login`, {
@@ -98,21 +83,11 @@ export const AuthProvider = ({ children }) => {
 
       localStorage.setItem('token', token);
       setUser(user);
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Login successful, user:', user);
-      }
       return { success: true, user };
     } catch (error) {
       const errorMessage =
         error.response?.data?.message || 'Login failed. Please check your credentials.';
       setError(errorMessage);
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('Login error:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-        });
-      }
       return { success: false, error: errorMessage };
     }
   };
@@ -125,13 +100,7 @@ export const AuthProvider = ({ children }) => {
 
   const getAuthHeader = () => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn('No auth token found in localStorage');
-      }
-      return {};
-    }
-    return { Authorization: `Bearer ${token}` };
+    return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
   const isAuthenticated = () => !!user;
@@ -151,7 +120,18 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, setUser, logout, getAuthHeader, error, isAuthenticated }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        setUser,
+        logout,
+        getAuthHeader,
+        error,
+        isAuthenticated,
+        loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
