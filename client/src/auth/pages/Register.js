@@ -80,14 +80,12 @@ const Register = () => {
     }
 
     try {
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Registration request to:', `${API_URL}/api/auth/register`);
-        console.log('Request payload:', {
-          name: formData.name,
-          email: formData.email,
-          role: formData.role,
-        });
-      }
+      console.log('Registration request to:', `${API_URL}/api/auth/register`);
+      console.log('Request payload:', {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+      });
 
       const response = await axios.post(`${API_URL}/api/auth/register`, {
         name: formData.name,
@@ -102,9 +100,7 @@ const Register = () => {
       }
 
       localStorage.setItem('token', token);
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Registration successful, user:', user);
-      }
+      console.log('Registration successful, user:', user);
 
       if (user.role === 'admin') {
         navigate('/admin/dashboard');
@@ -114,16 +110,16 @@ const Register = () => {
         navigate('/student/dashboard');
       }
     } catch (err) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('Registration error:', {
-          message: err.message,
-          response: err.response?.data,
-          status: err.response?.status,
-        });
-      }
+      console.error('Registration error:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+      });
       setError(
         err.response?.data?.message ||
-        'Registration failed. Please check your details and try again.'
+        err.message ||
+        'Registration failed. Please try again or contact support.'
       );
     } finally {
       setLoading(false);
