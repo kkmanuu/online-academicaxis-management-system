@@ -30,6 +30,8 @@ import { School as SchoolIcon } from "@mui/icons-material";
 import axios from "axios";
 import { useAuth } from "../../shared/context/AuthContext";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const CourseEnrollment = () => {
   const [availableCourses, setAvailableCourses] = useState([]);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
@@ -43,13 +45,18 @@ const CourseEnrollment = () => {
   const { getAuthHeader } = useAuth();
 
   useEffect(() => {
+    if (!API_URL) {
+      setError("API URL is not configured. Please contact the administrator.");
+      setLoading(false);
+      return;
+    }
     fetchData();
   }, [getAuthHeader]);
 
   const fetchData = async () => {
     try {
       const teacherRes = await axios.get(
-        "http://localhost:5000/api/student/my-teacher",
+        `${API_URL}/api/student/my-teacher`,
         {
           headers: getAuthHeader(),
         }
@@ -65,7 +72,7 @@ const CourseEnrollment = () => {
       }
 
       const teachersRes = await axios.get(
-        "http://localhost:5000/api/student/available-teachers",
+        `${API_URL}/api/student/available-teachers`,
         {
           headers: getAuthHeader(),
         }
@@ -73,10 +80,10 @@ const CourseEnrollment = () => {
       setTeachers(teachersRes.data);
 
       const [availableRes, enrolledRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/student/available-courses", {
+        axios.get(`${API_URL}/api/student/available-courses`, {
           headers: getAuthHeader(),
         }),
-        axios.get("http://localhost:5000/api/student/enrolled-courses", {
+        axios.get(`${API_URL}/api/student/enrolled-courses`, {
           headers: getAuthHeader(),
         }),
       ]);
@@ -90,8 +97,19 @@ const CourseEnrollment = () => {
       setEnrolledCourses(enrolledRes.data);
       setLoading(false);
     } catch (err) {
-      console.error("Error fetching data:", err);
-      setError("Failed to fetch data. Please try again.");
+      console.error("Error fetching data:", {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        code: err.code,
+      });
+      let errorMessage = err.response?.data?.message || err.message;
+      if (err.code === 'ECONNABORTED') {
+        errorMessage = "Request timed out. Please try again in a moment.";
+      } else if (err.message.includes("Network Error")) {
+        errorMessage = "Unable to connect to the server. Please check your internet connection or try again later.";
+      }
+      setError(errorMessage || "Failed to fetch data. Please try again.");
       setLoading(false);
     }
   };
@@ -99,7 +117,7 @@ const CourseEnrollment = () => {
   const handleSelectTeacher = async (teacherId) => {
     try {
       await axios.post(
-        `http://localhost:5000/api/student/select-teacher/${teacherId}`,
+        `${API_URL}/api/student/select-teacher/${teacherId}`,
         {},
         {
           headers: getAuthHeader(),
@@ -110,6 +128,11 @@ const CourseEnrollment = () => {
       fetchData();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
+      console.error("Error selecting teacher:", {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+      });
       setError(err.response?.data?.message || "Failed to select teacher");
       setTimeout(() => setError(""), 3000);
     }
@@ -122,7 +145,7 @@ const CourseEnrollment = () => {
     if (teacherId) {
       try {
         await axios.post(
-          `http://localhost:5000/api/student/select-teacher/${teacherId}`,
+          `${API_URL}/api/student/select-teacher/${teacherId}`,
           {},
           {
             headers: getAuthHeader(),
@@ -132,6 +155,11 @@ const CourseEnrollment = () => {
         fetchData();
         setTimeout(() => setSuccess(""), 3000);
       } catch (err) {
+        console.error("Error changing teacher:", {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status,
+        });
         setError(err.response?.data?.message || "Failed to select teacher");
         setTimeout(() => setError(""), 3000);
       }
@@ -141,7 +169,7 @@ const CourseEnrollment = () => {
   const handleEnroll = async (courseId) => {
     try {
       await axios.post(
-        `http://localhost:5000/api/student/enroll/${courseId}`,
+        `${API_URL}/api/student/enroll/${courseId}`,
         {},
         {
           headers: getAuthHeader(),
@@ -151,6 +179,11 @@ const CourseEnrollment = () => {
       fetchData();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
+      console.error("Error enrolling in course:", {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+      });
       setError(err.response?.data?.message || "Failed to enroll in the course");
       setTimeout(() => setError(""), 3000);
     }
