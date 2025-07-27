@@ -19,6 +19,9 @@ import {
 import axios from "axios";
 import { useAuth } from "../../shared/context/AuthContext";
 
+const API_URL = process.env.REACT_APP_API_URL;
+const WS_URL = API_URL ? `wss://${API_URL.replace('https://', '')}/ws` : null;
+
 const ExamInterface = () => {
   const { examId } = useParams();
   const navigate = useNavigate();
@@ -35,6 +38,16 @@ const ExamInterface = () => {
   const peerConnectionRef = useRef(null);
 
   useEffect(() => {
+    if (!API_URL || !WS_URL) {
+      setError("API or WebSocket URL is not configured. Please contact the administrator.");
+      setLoading(false);
+      return;
+    }
+    if (!user?._id) {
+      setError("User not authenticated. Please log in.");
+      setLoading(false);
+      return;
+    }
     fetchExamDetails();
     setupCamera();
     setupWebSocket();
@@ -51,14 +64,15 @@ const ExamInterface = () => {
         peerConnectionRef.current.close();
       }
     };
-  }, [examId]);
+  }, [examId, user]);
 
   const fetchExamDetails = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/student/exams/${examId}`,
+        `${API_URL}/api/student/exams/${examId}`,
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          timeout: 30000,
         }
       );
       console.log("Exam data received:", response.data);
@@ -72,11 +86,19 @@ const ExamInterface = () => {
       setLoading(false);
       startTimer(response.data.duration);
     } catch (error) {
-      console.error("Error fetching exam details:", error);
-      setError(
-        error.response?.data?.message ||
-          "Failed to load exam details. Please try again."
-      );
+      console.error("Error fetching exam details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        code: error.code,
+      });
+      let errorMessage = error.response?.data?.message || error.message;
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = "Request timed out. Please try again in a moment.";
+      } else if (error.message.includes("Network Error")) {
+        errorMessage = "Unable to connect to the server. Please check your internet connection or try again later.";
+      }
+      setError(errorMessage || "Failed to load exam details. Please try again.");
       setLoading(false);
     }
   };
@@ -97,7 +119,11 @@ const ExamInterface = () => {
   };
 
   const setupWebSocket = () => {
-    const ws = new WebSocket("ws://localhost:5000");
+    if (!WS_URL) {
+      setError("WebSocket URL is not configured.");
+      return;
+    }
+    const ws = new WebSocket(`${WS_URL}?examId=${examId}&role=student&userId=${user._id}`);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -112,18 +138,28 @@ const ExamInterface = () => {
     };
 
     ws.onmessage = async (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === "webrtc_offer") {
-        await handleWebRTCOffer(data.offer);
+      try {
+        const data = JSON.parse(event.data);
+        console.log("WebSocket message received:", data);
+        if (data.type === "webrtc_offer") {
+          await handleWebRTCOffer(data.offer);
+        } else if (data.type === "error") {
+          setError(data.message || "WebSocket error occurred.");
+        }
+      } catch (error) {
+        console.error("Error parsing WebSocket message:", error);
+        setError("Invalid WebSocket message received.");
       }
     };
 
     ws.onerror = (error) => {
       console.error("WebSocket error:", error);
+      setError("WebSocket connection failed. Please try again.");
     };
 
-    ws.onclose = () => {
-      console.log("WebSocket closed");
+    ws.onclose = (event) => {
+      console.log("WebSocket closed:", { code: event.code, reason: event.reason });
+      setError("WebSocket connection closed. Please refresh the page.");
     };
   };
 
@@ -166,7 +202,11 @@ const ExamInterface = () => {
         })
       );
     } catch (error) {
-      console.error("WebRTC error:", error);
+      console.error("WebRTC error:", {
+        message: error.message,
+        stack: error.stack,
+      });
+      setError("Failed to establish WebRTC connection.");
     }
   };
 
@@ -224,12 +264,13 @@ const ExamInterface = () => {
       console.log("Submitting exam with answers:", answers);
 
       const response = await axios.post(
-        `http://localhost:5000/api/student/exams/${examId}/submit`,
+        `${API_URL}/api/student/exams/${examId}/submit`,
         {
           answers,
         },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          timeout: 30000,
         }
       );
 
@@ -238,15 +279,19 @@ const ExamInterface = () => {
       alert(`Exam submitted successfully! Your score: ${response.data.score}%`);
       navigate("/student/results");
     } catch (error) {
-      console.error("Error submitting exam:", error);
-      console.error(
-        "Error details:",
-        error.response ? error.response.data : "No response data"
-      );
-      setError(
-        error.response?.data?.message ||
-          "Failed to submit exam. Please try again."
-      );
+      console.error("Error submitting exam:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        code: error.code,
+      });
+      let errorMessage = error.response?.data?.message || error.message;
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = "Submission timed out. Please try again in a moment.";
+      } else if (error.message.includes("Network Error")) {
+        errorMessage = "Unable to connect to the server. Please check your internet connection or try again later.";
+      }
+      setError(errorMessage || "Failed to submit exam. Please try again.");
       setIsSubmitting(false);
     }
   };
