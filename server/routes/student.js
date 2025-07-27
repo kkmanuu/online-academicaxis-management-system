@@ -15,9 +15,6 @@ const logRequest = (req, res, next) => {
   next();
 };
 
-// Log studentController exports for debugging
-console.log("studentController exports:", Object.keys(studentController));
-
 // Apply authentication middleware to all routes
 router.use(auth);
 
@@ -25,97 +22,147 @@ router.use(auth);
 router.use(checkRole(["student"]));
 
 // Get student dashboard data
-if (!studentController.getDashboardData)
-  throw new Error("studentController.getDashboardData is undefined");
-router.get("/dashboard", logRequest, studentController.getDashboardData);
+router.get("/dashboard", logRequest, (req, res, next) => {
+  if (!studentController.getDashboardData) {
+    console.error("studentController.getDashboardData is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.getDashboardData(req, res, next);
+});
 
 // Get student statistics
-if (!studentController.getStatistics)
-  throw new Error("studentController.getStatistics is undefined");
-router.get("/statistics", logRequest, studentController.getStatistics);
+router.get("/statistics", logRequest, (req, res, next) => {
+  if (!studentController.getStatistics) {
+    console.error("studentController.getStatistics is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.getStatistics(req, res, next);
+});
 
 // Get available exams
-if (!studentController.getAvailableExams)
-  throw new Error("studentController.getAvailableExams is undefined");
-router.get("/exams/available", logRequest, studentController.getAvailableExams);
+router.get("/exams/available", logRequest, (req, res, next) => {
+  if (!studentController.getAvailableExams) {
+    console.error("studentController.getAvailableExams is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.getAvailableExams(req, res, next);
+});
 
 // Debug endpoint for available exams
-router.get("/exams/debug", logRequest, studentController.getAvailableExams);
+router.get("/exams/debug", logRequest, (req, res, next) => {
+  if (!studentController.getAvailableExams) {
+    console.error("studentController.getAvailableExams is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.getAvailableExams(req, res, next);
+});
 
 // Get teacher's exams for the student
-if (!studentController.getTeacherExams)
-  throw new Error("studentController.getTeacherExams is undefined");
-router.get("/teacher-exams", logRequest, studentController.getTeacherExams);
+router.get("/teacher-exams", logRequest, (req, res, next) => {
+  if (!studentController.getTeacherExams) {
+    console.error("studentController.getTeacherExams is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.getTeacherExams(req, res, next);
+});
 
 // Get exam details
-if (!studentController.getExamDetails)
-  throw new Error("studentController.getExamDetails is undefined");
-router.get("/exams/:examId", logRequest, studentController.getExamDetails);
+router.get("/exams/:examId", logRequest, (req, res, next) => {
+  if (!studentController.getExamDetails) {
+    console.error("studentController.getExamDetails is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.getExamDetails(req, res, next);
+});
 
 // Submit exam
-if (!studentController.submitExam)
-  throw new Error("studentController.submitExam is undefined");
-router.post("/exams/:examId/submit", logRequest, studentController.submitExam);
+router.post("/exams/:examId/submit", logRequest, (req, res, next) => {
+  if (!studentController.submitExam) {
+    console.error("studentController.submitExam is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.submitExam(req, res, next);
+});
 
 // Get student results
-if (!studentController.getResults)
-  throw new Error("studentController.getResults is undefined");
-router.get("/results", logRequest, studentController.getResults);
+router.get("/results", logRequest, (req, res, next) => {
+  if (!studentController.getResults) {
+    console.error("studentController.getResults is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.getResults(req, res, next);
+});
 
 // Get enrolled courses
-if (!studentController.getEnrolledCourses)
-  throw new Error("studentController.getEnrolledCourses is undefined");
-router.get(
-  "/enrolled-courses",
-  logRequest,
-  studentController.getEnrolledCourses
-);
+router.get("/enrolled-courses", logRequest, (req, res, next) => {
+  if (!studentController.getEnrolledCourses) {
+    console.error("studentController.getEnrolledCourses is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.getEnrolledCourses(req, res, next);
+});
 
 // Get available courses
-if (!studentController.getAvailableCourses)
-  throw new Error("studentController.getAvailableCourses is undefined");
-router.get(
-  "/available-courses",
-  logRequest,
-  studentController.getAvailableCourses
-);
+router.get("/available-courses", logRequest, (req, res, next) => {
+  if (!studentController.getAvailableCourses) {
+    console.error("studentController.getAvailableCourses is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.getAvailableCourses(req, res, next);
+});
 
 // Enroll in a course
-if (!studentController.enrollInCourse)
-  throw new Error("studentController.enrollInCourse is undefined");
-router.post("/enroll/:courseId", logRequest, studentController.enrollInCourse);
+router.post("/enroll/:courseId", logRequest, (req, res, next) => {
+  if (!studentController.enrollInCourse) {
+    console.error("studentController.enrollInCourse is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.enrollInCourse(req, res, next);
+});
 
 // Get available teachers
-if (!studentController.getAvailableTeachers)
-  throw new Error("studentController.getAvailableTeachers is undefined");
-router.get(
-  "/available-teachers",
-  logRequest,
-  studentController.getAvailableTeachers
-);
+router.get("/available-teachers", logRequest, (req, res, next) => {
+  if (!studentController.getAvailableTeachers) {
+    console.error("studentController.getAvailableTeachers is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.getAvailableTeachers(req, res, next);
+});
 
 // Select a teacher
-if (!studentController.selectTeacher)
-  throw new Error("studentController.selectTeacher is undefined");
-router.post(
-  "/select-teacher/:teacherId",
-  logRequest,
-  studentController.selectTeacher
-);
+router.post("/select-teacher/:teacherId", logRequest, (req, res, next) => {
+  if (!studentController.selectTeacher) {
+    console.error("studentController.selectTeacher is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.selectTeacher(req, res, next);
+});
 
 // Get student's enrolled teacher
-if (!studentController.getMyTeacher)
-  throw new Error("studentController.getMyTeacher is undefined");
-router.get("/my-teacher", logRequest, studentController.getMyTeacher);
+router.get("/my-teacher", logRequest, (req, res, next) => {
+  if (!studentController.getMyTeacher) {
+    console.error("studentController.getMyTeacher is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.getMyTeacher(req, res, next);
+});
 
 // Get student profile
-if (!studentController.getProfile)
-  throw new Error("studentController.getProfile is undefined");
-router.get("/profile", logRequest, studentController.getProfile);
+router.get("/profile", logRequest, (req, res, next) => {
+  if (!studentController.getProfile) {
+    console.error("studentController.getProfile is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.getProfile(req, res, next);
+});
 
 // Update student profile
-if (!studentController.updateProfile)
-  throw new Error("studentController.updateProfile is undefined");
-router.put("/profile", logRequest, studentController.updateProfile);
+router.put("/profile", logRequest, (req, res, next) => {
+  if (!studentController.updateProfile) {
+    console.error("studentController.updateProfile is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  studentController.updateProfile(req, res, next);
+});
 
 module.exports = router;
