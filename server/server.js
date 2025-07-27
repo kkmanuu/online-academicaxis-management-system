@@ -15,7 +15,7 @@ examHandler.initialize(server);
 app.use(cors({
   origin: [
     "http://localhost:3000", // For local development
-    "https://academicsystem-g393.onrender.com"
+    "https://academicaxissystem.onrender.com"
   ],
   credentials: true
 }));
