@@ -20,6 +20,8 @@ import { useAuth } from "../../shared/context/AuthContext";
 import axios from "axios";
 import { format, parseISO } from "date-fns";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const AvailableExams = () => {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +30,11 @@ const AvailableExams = () => {
   const { getAuthHeader, isAuthenticated } = useAuth();
 
   useEffect(() => {
+    if (!API_URL) {
+      setError("API URL is not configured. Please contact the administrator.");
+      setLoading(false);
+      return;
+    }
     if (!isAuthenticated()) {
       console.warn("User not authenticated. Redirecting to login.");
       setError("Please log in to view available exams.");
@@ -53,13 +60,13 @@ const AvailableExams = () => {
         return;
       }
 
-      const config = {
-        headers,
-        url: "http://localhost:5000/api/student/exams/available",
-      };
-      console.log("Axios request config:", config);
-
-      const response = await axios.get(config.url, { headers });
+      const response = await axios.get(
+        `${API_URL}/api/student/exams/available`,
+        {
+          headers,
+          timeout: 30000,
+        }
+      );
       console.log("Available exams response:", response.data);
 
       const validExams = Array.isArray(response.data)
@@ -91,12 +98,14 @@ const AvailableExams = () => {
       }
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching exams:", error);
+      console.error("Error fetching exams:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        code: error.code,
+      });
       let errorMessage = "Failed to load available exams. Please try again.";
       if (error.response) {
-        console.log("Error response:", error.response);
-        console.log("Error data:", error.response.data);
-        console.log("Error status:", error.response.status);
         errorMessage =
           error.response.data.message ||
           `Error ${error.response.status}: ${
@@ -116,11 +125,11 @@ const AvailableExams = () => {
           errorMessage =
             "Exams endpoint not found. Please contact the administrator.";
         }
-      } else if (error.request) {
+      } else if (error.code === "ECONNABORTED") {
+        errorMessage = "Request timed out. Please try again in a moment.";
+      } else if (error.message.includes("Network Error")) {
         errorMessage =
-          "No response from server. Please check if the backend is running at http://localhost:5000.";
-      } else {
-        errorMessage = `Request error: ${error.message}`;
+          "Unable to connect to the server. Please check your internet connection or try again later.";
       }
       setError(errorMessage);
       setLoading(false);
