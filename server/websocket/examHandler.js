@@ -6,17 +6,28 @@ class ExamHandler {
     this.examSessions = new Map(); // Map to store exam sessions
   }
 
-  initialize(server) {
-    const wss = new WebSocket.Server({ server });
+  initialize(server, path = "/ws") {
+    const wss = new WebSocket.Server({ server, path });
+    console.log(`WebSocket server initialized on path: ${path}`);
 
     wss.on("connection", (ws, req) => {
-      const params = new URLSearchParams(req.url.split("?")[1]);
-      const examId = params.get("examId");
-      const role = params.get("role");
-      const userId = params.get("userId");
+      console.log("WebSocket connection attempt:", { url: req.url });
+      let examId, role, userId;
 
-      if (!examId || !role || !userId) {
-        ws.close(1008, "Missing required parameters");
+      try {
+        const params = new URLSearchParams(req.url.split("?")[1] || "");
+        examId = params.get("examId");
+        role = params.get("role");
+        userId = params.get("userId");
+
+        if (!examId || !role || !userId) {
+          console.error("Missing WebSocket parameters:", { examId, role, userId });
+          ws.close(1008, "Missing required parameters: examId, role, userId");
+          return;
+        }
+      } catch (error) {
+        console.error("Error parsing WebSocket URL:", error);
+        ws.close(1008, "Invalid URL parameters");
         return;
       }
 
@@ -40,15 +51,34 @@ class ExamHandler {
       ws.on("message", (message) => {
         try {
           const data = JSON.parse(message);
+          console.log("WebSocket message received:", { examId, userId, data });
           this.handleMessage(examId, userId, role, data);
         } catch (error) {
-          console.error("Error handling message:", error);
+          console.error("Error handling WebSocket message:", {
+            error: error.message,
+            stack: error.stack,
+          });
+          ws.send(
+            JSON.stringify({
+              type: "error",
+              message: "Invalid message format",
+            })
+          );
         }
       });
 
       // Handle connection close
-      ws.on("close", () => {
+      ws.on("close", (code, reason) => {
+        console.log("WebSocket closed:", { code, reason: reason.toString() });
         this.handleDisconnect(examId, userId, connectionId);
+      });
+
+      // Handle errors
+      ws.on("error", (error) => {
+        console.error("WebSocket error:", {
+          error: error.message,
+          stack: error.stack,
+        });
       });
 
       // Send initial connection success message
@@ -60,22 +90,45 @@ class ExamHandler {
         })
       );
     });
+
+    wss.on("error", (error) => {
+      console.error("WebSocket server error:", {
+        error: error.message,
+        stack: error.stack,
+      });
+    });
   }
 
   handleMessage(examId, userId, role, data) {
     const session = this.examSessions.get(examId);
-    if (!session) return;
+    if (!session) {
+      console.error("No session found for examId:", examId);
+      return;
+    }
 
     switch (data.type) {
-      case "offer":
-        // Handle WebRTC offer from student
+      case "student_join":
+        console.log("Student joined exam:", { examId, userId });
+        session.forEach((user, id) => {
+          if (user.role === "teacher") {
+            user.ws.send(
+              JSON.stringify({
+                type: "student_join",
+                studentId: userId,
+              })
+            );
+          }
+        });
+        break;
+
+      case "webrtc_offer":
         if (role === "student") {
-          // Broadcast to all teachers in the exam
+          console.log("Received WebRTC offer from student:", { userId });
           session.forEach((user, id) => {
             if (user.role === "teacher") {
               user.ws.send(
                 JSON.stringify({
-                  type: "offer",
+                  type: "webrtc_offer",
                   studentId: userId,
                   offer: data.offer,
                 })
@@ -85,14 +138,14 @@ class ExamHandler {
         }
         break;
 
-      case "answer":
-        // Handle WebRTC answer from teacher
+      case "webrtc_answer":
         if (role === "teacher") {
+          console.log("Received WebRTC answer from teacher:", { userId });
           const student = session.get(data.studentId);
           if (student) {
             student.ws.send(
               JSON.stringify({
-                type: "answer",
+                type: "webrtc_answer",
                 teacherId: userId,
                 answer: data.answer,
               })
@@ -101,15 +154,14 @@ class ExamHandler {
         }
         break;
 
-      case "ice-candidate":
-        // Handle ICE candidate
+      case "ice_candidate":
         if (role === "student") {
-          // Send to all teachers
+          console.log("Received ICE candidate from student:", { userId });
           session.forEach((user, id) => {
             if (user.role === "teacher") {
               user.ws.send(
                 JSON.stringify({
-                  type: "ice-candidate",
+                  type: "ice_candidate",
                   studentId: userId,
                   candidate: data.candidate,
                 })
@@ -117,12 +169,12 @@ class ExamHandler {
             }
           });
         } else if (role === "teacher") {
-          // Send to specific student
+          console.log("Received ICE candidate from teacher:", { userId });
           const student = session.get(data.studentId);
           if (student) {
             student.ws.send(
               JSON.stringify({
-                type: "ice-candidate",
+                type: "ice_candidate",
                 teacherId: userId,
                 candidate: data.candidate,
               })
@@ -130,10 +182,14 @@ class ExamHandler {
           }
         }
         break;
+
+      default:
+        console.warn("Unknown message type:", data.type);
     }
   }
 
   handleDisconnect(examId, userId, connectionId) {
+    console.log("Handling disconnect:", { examId, userId, connectionId });
     // Remove connection
     this.connections.delete(connectionId);
 
@@ -146,7 +202,7 @@ class ExamHandler {
       session.forEach((user) => {
         user.ws.send(
           JSON.stringify({
-            type: "user-disconnected",
+            type: "user_disconnected",
             userId: userId,
           })
         );
@@ -155,6 +211,7 @@ class ExamHandler {
       // Clean up empty sessions
       if (session.size === 0) {
         this.examSessions.delete(examId);
+        console.log("Cleaned up empty exam session:", examId);
       }
     }
   }
