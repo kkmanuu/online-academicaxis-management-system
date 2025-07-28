@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: academicaxissystem-backend
+    env: node
+    repo: https://github.com/kkmanuu/online-academicaxis-management-system
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+  - type: web
+    name: academicsystem-g393
+    env: static
+    repo: https://github.com/kkmanuu/online-academicaxis-management-system
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: REACT_APP_API_URL
+        sync: false
