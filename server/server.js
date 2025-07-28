@@ -3,7 +3,6 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const http = require("http");
-const path = require("path"); // Add this for file path handling
 const examHandler = require("./websocket/examHandler");
 
 const app = express();
@@ -16,14 +15,11 @@ examHandler.initialize(server, "/ws/exams");
 app.use(cors({
   origin: [
     "http://localhost:3000", // For local development
-    "https://academicsystem-g393.onrender.com" // Your Render frontend URL
+    "https://academicsystem-g393.onrender.com"
   ],
   credentials: true
 }));
 app.use(express.json());
-
-// Serve static files from the React frontend build
-app.use(express.static(path.join(__dirname, "../client/build")));
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
@@ -31,11 +27,6 @@ app.use("/api/admin", require("./routes/admin"));
 app.use("/api/teacher", require("./routes/teacher"));
 app.use("/api/student", require("./routes/student"));
 app.use("/api/exams", require("./routes/exam"));
-
-// Catch-all route to serve index.html for client-side routes
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../client/build", "index.html"));
-});
 
 // MongoDB connection
 const mongoURI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/academicaxis";
