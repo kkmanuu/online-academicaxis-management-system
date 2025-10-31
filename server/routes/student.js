@@ -15,6 +15,7 @@ const logRequest = (req, res, next) => {
   next();
 };
 
+
 // Apply authentication middleware to all routes
 router.use(auth);
 
