@@ -3,6 +3,7 @@ const router = express.Router();
 const { auth, checkRole } = require("../middleware/auth");
 const examController = require("../controllers/examController");
 
+
 // Debug middleware to log all requests
 const logRequest = (req, res, next) => {
   console.log("Exam route - Request:", {
