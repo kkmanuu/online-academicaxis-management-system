@@ -154,6 +154,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
+
 // @route   GET api/auth/me
 // @desc    Get current user
 // @access  Private
