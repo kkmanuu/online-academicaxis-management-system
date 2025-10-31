@@ -52,6 +52,7 @@ const connectDB = async () => {
   }
 };
 
+
 // Create a test user
 const createTestUser = async () => {
   try {
