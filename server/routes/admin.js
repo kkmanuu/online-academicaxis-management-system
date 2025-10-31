@@ -16,6 +16,7 @@ const {
 } = require("../controllers/adminController");
 const { auth, checkRole } = require("../middleware/auth");
 
+
 // All routes require authentication and admin role
 router.post("/users", auth, checkRole(["admin"]), addUser);
 
