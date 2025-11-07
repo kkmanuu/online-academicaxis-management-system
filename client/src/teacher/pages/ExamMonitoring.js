@@ -1,4 +1,3 @@
-// src/pages/ExamMonitoring.jsx   (or wherever you keep the component)
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import {
