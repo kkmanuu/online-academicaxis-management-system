@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/ExamMonitoring.jsx   (or wherever you keep the component)
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Box,
@@ -13,7 +14,7 @@ import {
   Avatar,
   Divider,
   Alert,
-  CircularProgress
+  CircularProgress,
 } from '@mui/material';
 import { Person as PersonIcon } from '@mui/icons-material';
 import { useAuth } from '../../shared/context/AuthContext';
@@ -31,52 +32,78 @@ const ExamMonitoring = () => {
   const { examId } = useParams();
   const { user, getAuthHeader } = useAuth();
 
+  /* ------------------------------------------------------------------ */
+  /* 1. Fetch exam details                                              */
+  /* ------------------------------------------------------------------ */
+  const fetchExamDetails = useCallback(async () => {
+    try {
+      const resp = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/exams/${examId}`,
+        { headers: getAuthHeader() }
+      );
+      setExam(resp.data);
+      setActiveStudents(resp.data.enrolledStudents || []);
+      setLoading(false);
+    } catch (err) {
+      console.error('Fetch exam error', err);
+      setError(err.response?.data?.message || 'Failed to load exam');
+      setLoading(false);
+    }
+  }, [examId, getAuthHeader]);
+
   useEffect(() => {
     fetchExamDetails();
-    return () => {
-      websocketService.disconnect();
-    };
-  }, [examId]);
+    return () => websocketService.disconnect();
+  }, [fetchExamDetails]);
 
+  /* ------------------------------------------------------------------ */
+  /* 2. WebSocket connection (teacher)                                 */
+  /* ------------------------------------------------------------------ */
   useEffect(() => {
-    if (exam) {
-      // Initialize WebSocket connection
-      websocketService.connect(examId, 'teacher', user.id, `${process.env.REACT_APP_API_URL.replace('https', 'wss')}`);
-      
-      // Set up message handler
-      websocketService.setOnMessageCallback((message) => {
-        if (message.type === 'offer') {
-          // Handle WebRTC offer from student
-          handleStudentOffer(message);
-        }
-      });
-    }
-  }, [exam, user.id]);
+    if (!exam || !user?.id) return;
 
-  const fetchExamDetails = async () => {
-    try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/exams/${examId}`, {
-        headers: getAuthHeader()
-      });
-      setExam(response.data);
-      setActiveStudents(response.data.enrolledStudents || []);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching exam details:', error);
-      setError(error.response?.data?.message || 'Failed to load exam details');
-      setLoading(false);
-    }
-  };
+    // Build wss://… from the HTTP API URL
+    const wsBase = process.env.REACT_APP_API_URL
+      .replace(/^http/, 'ws')   // http → ws
+      .replace(/^ws/, 'wss');   // ensure wss for production
 
-  const handleStudentOffer = async (message) => {
-    // Handle WebRTC offer from student
-    // This will be implemented in the CameraMonitor component
+    const wsUrl = `${wsBase.endsWith('/') ? wsBase.slice(0, -1) : wsBase}/ws`;
+
+    console.log('[WS] Teacher connecting →', wsUrl);
+
+    websocketService.connect(examId, 'teacher', user.id, wsUrl);
+
+    const handler = (msg) => {
+      if (msg.type === 'webrtc_offer') {
+        handleStudentOffer(msg);
+      }
+    };
+
+    websocketService.setOnMessageCallback(handler);
+
+    return () => {
+      websocketService.setOnMessageCallback(null);
+    };
+  }, [exam, user?.id, examId]);
+
+  /* ------------------------------------------------------------------ */
+  /* 3. Offer handling (pass to CameraMonitor)                         */
+  /* ------------------------------------------------------------------ */
+  const handleStudentOffer = (message) => {
+    // The CameraMonitor component will read the latest offer from the
+    // websocketService (or you can keep a map of peer connections here).
+    // For the minimal fix we just forward the message – the component
+    // already receives the service via props if you need it.
+    console.log('Received WebRTC offer from student', message.studentId);
   };
 
   const handleStudentSelect = (student) => {
     setSelectedStudent(student);
   };
 
+  /* ------------------------------------------------------------------ */
+  /* UI                                                                 */
+  /* ------------------------------------------------------------------ */
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
@@ -95,6 +122,7 @@ const ExamMonitoring = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      {/* Exam header */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h4" gutterBottom>
           {exam.title} - Exam Monitoring
@@ -105,28 +133,26 @@ const ExamMonitoring = () => {
       </Paper>
 
       <Grid container spacing={3}>
+        {/* Left panel – active students */}
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>
-              Active Students
+              Active Students ({activeStudents.length})
             </Typography>
             <List>
               {activeStudents.map((student) => (
                 <React.Fragment key={student._id}>
                   <ListItem
                     button
-                    onClick={() => handleStudentSelect(student)}
                     selected={selectedStudent?._id === student._id}
+                    onClick={() => handleStudentSelect(student)}
                   >
                     <ListItemAvatar>
                       <Avatar>
                         <PersonIcon />
                       </Avatar>
                     </ListItemAvatar>
-                    <ListItemText
-                      primary={student.name}
-                      secondary={student.email}
-                    />
+                    <ListItemText primary={student.name} secondary={student.email} />
                   </ListItem>
                   <Divider />
                 </React.Fragment>
@@ -135,15 +161,25 @@ const ExamMonitoring = () => {
           </Paper>
         </Grid>
 
+        {/* Right panel – camera feed */}
         <Grid item xs={12} md={8}>
           {selectedStudent ? (
             <CameraMonitor
               role="teacher"
               examId={examId}
               studentId={selectedStudent._id}
+              websocketService={websocketService}
             />
           ) : (
-            <Paper sx={{ p: 3, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Paper
+              sx={{
+                p: 3,
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <Typography variant="h6" color="text.secondary">
                 Select a student to view their camera feed
               </Typography>
