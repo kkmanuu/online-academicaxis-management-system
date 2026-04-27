@@ -14,7 +14,7 @@ examHandler.initialize(server, "/ws/exams");
 // Middleware
 app.use(cors({
   origin: [
-    "http://localhost:3000", // For local development
+    "http://localhost:3000",
     "https://academicsystem-g393.onrender.com"
   ],
   credentials: true
