@@ -106,11 +106,11 @@ class ExamHandler {
       return;
     }
 
-    switch (data.type) {
+        switch (data.type) {
       case "student_join":
         console.log("Student joined exam:", { examId, userId });
         session.forEach((user, id) => {
-          if (user.role === "teacher") {
+          if (user.role.toLowerCase() === "teacher") {
             user.ws.send(
               JSON.stringify({
                 type: "student_join",
@@ -122,10 +122,10 @@ class ExamHandler {
         break;
 
       case "webrtc_offer":
-        if (role === "student") {
+        if (role.toLowerCase() === "student") {
           console.log("Received WebRTC offer from student:", { userId });
           session.forEach((user, id) => {
-            if (user.role === "teacher") {
+            if (user.role.toLowerCase() === "teacher") {
               user.ws.send(
                 JSON.stringify({
                   type: "webrtc_offer",
@@ -139,7 +139,7 @@ class ExamHandler {
         break;
 
       case "webrtc_answer":
-        if (role === "teacher") {
+        if (role.toLowerCase() === "teacher") {
           console.log("Received WebRTC answer from teacher:", { userId });
           const student = session.get(data.studentId);
           if (student) {
@@ -155,10 +155,10 @@ class ExamHandler {
         break;
 
       case "ice_candidate":
-        if (role === "student") {
+        if (role.toLowerCase() === "student") {
           console.log("Received ICE candidate from student:", { userId });
           session.forEach((user, id) => {
-            if (user.role === "teacher") {
+            if (user.role.toLowerCase() === "teacher") {
               user.ws.send(
                 JSON.stringify({
                   type: "ice_candidate",
@@ -168,7 +168,7 @@ class ExamHandler {
               );
             }
           });
-        } else if (role === "teacher") {
+        } else if (role.toLowerCase() === "teacher") {
           console.log("Received ICE candidate from teacher:", { userId });
           const student = session.get(data.studentId);
           if (student) {
