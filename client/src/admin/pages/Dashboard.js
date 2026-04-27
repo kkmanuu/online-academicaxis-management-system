@@ -103,7 +103,7 @@ const AdminDashboard = () => {
     </Box>
   );
 
-  if (!user || user.role !== 'admin') {
+  if (!user || user.role?.toLowerCase() !== 'admin') {
     return <Navigate to="/login" />;
   }
 
