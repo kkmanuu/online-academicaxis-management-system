@@ -62,12 +62,16 @@ const Login = () => {
 
       if (result.success) {
         console.log("Login successful, redirecting to dashboard");
-        if (result.user.role === "admin") {
+        const userRole = result.user.role?.toLowerCase();
+        if (userRole === "admin") {
           navigate("/admin/dashboard");
-        } else if (result.user.role === "teacher") {
+        } else if (userRole === "teacher") {
           navigate("/teacher/dashboard");
-        } else if (result.user.role === "student") {
+        } else if (userRole === "student") {
           navigate("/student/dashboard");
+        } else {
+          // Fallback if role is undefined or invalid
+          setError("Invalid user role. Please contact support.");
         }
       } else {
         console.error("Login failed:", result.error);
