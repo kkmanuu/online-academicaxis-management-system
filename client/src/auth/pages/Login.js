@@ -73,12 +73,16 @@ const Login = () => {
 
       if (result.success) {
         console.log("Login successful, user:", result.user);
-        if (result.user.role === "admin") {
+        const userRole = result.user.role?.toLowerCase();
+        if (userRole === "admin") {
           navigate("/admin/dashboard");
-        } else if (result.user.role === "teacher") {
+        } else if (userRole === "teacher") {
           navigate("/teacher/dashboard");
-        } else if (result.user.role === "student") {
+        } else if (userRole === "student") {
           navigate("/student/dashboard");
+        } else {
+          // Invalid role fallback
+          setError("Invalid user role assigned. Please contact support.");
         }
       } else {
         console.error("Login failed:", result.error);
