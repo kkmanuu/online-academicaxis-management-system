@@ -40,7 +40,7 @@ const UserManagement = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogMode, setDialogMode] = useState("edit"); // 'edit' or 'add'
+  const [dialogMode, setDialogMode] = useState("edit");
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
