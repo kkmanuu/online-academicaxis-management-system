@@ -22,6 +22,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ["admin", "teacher", "student"],
     required: true,
+    lowercase: true,
   },
   isBlocked: {
     type: Boolean,
