@@ -119,8 +119,8 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Check role
-    if (role && user.role !== role) {
+    // Check role (case-insensitive)
+    if (role && user.role.toLowerCase() !== role.toLowerCase()) {
       console.log(`Login attempt failed: Role mismatch for user ${email}. Expected: ${role}, Actual: ${user.role}`);
       return res.status(400).json({ message: `Invalid credentials for ${role} login` });
     }
