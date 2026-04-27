@@ -51,9 +51,10 @@ const checkRole = (roles) => {
             return res.status(401).json({ message: 'Authentication required' });
         }
 
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({ 
-                message: `Access denied. Required role: ${roles.join(' or ')}, User role: ${req.user.role}` 
+        const userRole = req.user.role?.toLowerCase();
+        if (!roles.some(r => r.toLowerCase() === userRole)) {
+            return res.status(403).json({
+                message: `Access denied. Required role: ${roles.join(' or ')}, User role: ${req.user.role}`
             });
         }
 
