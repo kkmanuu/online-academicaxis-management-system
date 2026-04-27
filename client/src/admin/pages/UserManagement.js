@@ -225,9 +225,9 @@ const UserManagement = () => {
                     <Chip
                       label={user.role}
                       color={
-                        user.role === "admin"
+                        user.role?.toLowerCase() === "admin"
                           ? "error"
-                          : user.role === "teacher"
+                          : user.role?.toLowerCase() === "teacher"
                           ? "primary"
                           : "success"
                       }
