@@ -58,30 +58,30 @@ exports.login = async (req, res) => {
     try {
         const { email, password, role } = req.body;
 
-        // Find user
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // Check if user is blocked
         if (user.isBlocked) {
             return res.status(403).json({ message: 'Your account has been blocked' });
         }
 
-        // Verify password
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // Check if role matches (if role is provided)
-        if (role && user.role !== role) {
+        // ✅ FIXED ROLE CHECK
+        if (role && user.role.toLowerCase() !== role.toLowerCase()) {
             return res.status(401).json({ message: `Invalid credentials for ${role} login` });
         }
 
-        // Generate token
-        const token = generateToken(user._id);
+        const token = jwt.sign(
+            { userId: user._id },
+            process.env.JWT_SECRET || 'your_jwt_secret',
+            { expiresIn: '7d' }
+        );
 
         res.json({
             message: 'Login successful',
@@ -93,6 +93,7 @@ exports.login = async (req, res) => {
             },
             token
         });
+
     } catch (error) {
         res.status(500).json({ message: 'Error logging in', error: error.message });
     }
