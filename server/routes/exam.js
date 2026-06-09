@@ -3,7 +3,6 @@ const router = express.Router();
 const { auth, checkRole } = require("../middleware/auth");
 const examController = require("../controllers/examController");
 
-
 // Debug middleware to log all requests
 const logRequest = (req, res, next) => {
   console.log("Exam route - Request:", {
@@ -28,6 +27,15 @@ router.post("/", checkRole(["teacher"]), logRequest, (req, res, next) => {
   examController.createExam(req, res, next);
 });
 
+// Get all exams for a teacher (must come before /:examId to avoid "teacher" matching examId)
+router.get("/teacher", checkRole(["teacher"]), logRequest, (req, res, next) => {
+  if (!examController.getTeacherExams) {
+    console.error("examController.getTeacherExams is undefined");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+  examController.getTeacherExams(req, res, next);
+});
+
 // Add questions to an exam
 router.post("/:examId/questions", checkRole(["teacher"]), logRequest, (req, res, next) => {
   if (!examController.addQuestions) {
@@ -44,15 +52,6 @@ router.post("/:examId/enroll", checkRole(["teacher"]), logRequest, (req, res, ne
     return res.status(500).json({ message: "Server configuration error" });
   }
   examController.enrollStudents(req, res, next);
-});
-
-// Get all exams for a teacher
-router.get("/teacher", checkRole(["teacher"]), logRequest, (req, res, next) => {
-  if (!examController.getTeacherExams) {
-    console.error("examController.getTeacherExams is undefined");
-    return res.status(500).json({ message: "Server configuration error" });
-  }
-  examController.getTeacherExams(req, res, next);
 });
 
 // Get exam details with questions
