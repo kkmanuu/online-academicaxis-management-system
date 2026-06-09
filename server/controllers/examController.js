@@ -306,7 +306,6 @@ exports.enrollStudents = async (req, res) => {
 
     const teacherId = exam.teacher.toString();
     if (teacherId !== req.user._id.toString()) {
-      console.warn('enrollStudents - Unauthorized teacher:', { teacherId: REQ.user._id, examTeacher: teacherId });
       return res.status(403).json({ message: 'You are not authorized to enroll students in this exam' });
     }
 
@@ -346,6 +345,11 @@ exports.enrollStudents = async (req, res) => {
 exports.getTeacherExams = async (req, res) => {
   try {
     console.log('getTeacherExams - Start:', { teacherId: req.user?._id });
+
+    if (!req.user || !mongoose.Types.ObjectId.isValid(req.user._id)) {
+      console.warn('getTeacherExams - Invalid or missing user ID:', req.user);
+      return res.status(401).json({ message: 'Authentication required' });
+    }
 
     const exams = await Exam.find({ teacher: req.user._id })
       .populate('course', 'name')
