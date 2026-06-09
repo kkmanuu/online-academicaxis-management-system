@@ -254,7 +254,7 @@ const TeacherDashboard = () => {
           <Route path="/courses" element={<CourseManagement />} />
           <Route path="/results" element={<StudentResults />} />
           <Route path="/results/:examId" element={<StudentResults />} />
-          <Route path="/exams/monitor" element={<ExamMonitoring />} />
+          <Route path="/exams/:examId/monitor" element={<ExamMonitoring />} />
         </Routes>
       </Box>
     </Box>
