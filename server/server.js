@@ -21,16 +21,17 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Serve static files from React build directory
-const path = require('path');
-app.use(express.static(path.join(__dirname, '../../client/build')));
-
 // Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/teacher", require("./routes/teacher"));
 app.use("/api/student", require("./routes/student"));
 app.use("/api/exams", require("./routes/exam"));
+
+// 404 for non-API routes
+app.use((req, res) => {
+  res.status(404).json({ message: 'API route not found' });
+});
 
 // MongoDB connection
 const mongoURI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/academicaxis";
@@ -46,9 +47,10 @@ mongoose
     process.exit(1);
   });
 
-// SPA fallback: serve index.html for any non-API route
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../client/build/index.html'));
+// Start server
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
 
 // Start server
