@@ -3,6 +3,7 @@ const Exam = require('../models/Exam');
 const Course = require('../models/Course');
 const User = require('../models/User');
 const Question = require('../models/Question');
+const Result = require('../models/Result');
 
 // Create a new exam
 exports.createExam = async (req, res) => {
