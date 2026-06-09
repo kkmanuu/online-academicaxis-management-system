@@ -29,6 +29,7 @@ import {
   Delete as DeleteIcon,
   Assessment as ResultsIcon,
   GroupAdd as GroupAddIcon,
+  Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../../shared/context/AuthContext";
 import axios from "axios";
