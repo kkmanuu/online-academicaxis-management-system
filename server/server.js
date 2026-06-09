@@ -21,6 +21,10 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Serve static files from React build directory
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../../client/build')));
+
 // Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/admin", require("./routes/admin"));
@@ -41,6 +45,11 @@ mongoose
     console.error("❌ MongoDB connection error:", err);
     process.exit(1);
   });
+
+// SPA fallback: serve index.html for any non-API route
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../client/build/index.html'));
+});
 
 // Start server
 const PORT = process.env.PORT || 5000;
