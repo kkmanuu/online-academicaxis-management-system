@@ -184,14 +184,13 @@ exports.getAvailableExams = async (req, res) => {
   try {
     const studentId = req.user.id;
 
-    // Get student with enrolled courses
-    const student = await User.findById(studentId).populate('courses');
+    const enrolledCourses = await Course.find({ students: studentId }).select('_id');
     
-    if (!student || !student.courses || student.courses.length === 0) {
+    if (!enrolledCourses || enrolledCourses.length === 0) {
       return res.json([]);
     }
     
-    const courseIds = student.courses.map(course => course._id);
+    const courseIds = enrolledCourses.map(course => course._id);
     
     // Get exams for enrolled courses that haven't been taken
     const takenExamIds = (await Result.find({ student: studentId }))
