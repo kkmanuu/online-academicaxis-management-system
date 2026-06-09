@@ -267,7 +267,7 @@ exports.getExamDetails = async (req, res) => {
       }
   
       // Check if student is enrolled in the course
-      if (!exam.course.students.includes(studentId)) {
+      if (!exam.course.students.map(s => s.toString()).includes(studentId.toString())) {
         return res.status(403).json({ message: 'Not enrolled in this course' });
       }
   
@@ -583,7 +583,7 @@ exports.getAvailableCourses = async (req, res) => {
     const student = await User.findById(req.user._id).populate('enrolledTeacher', 'name email profilePicture');
     if (!student) {
       console.warn('getAvailableCourses - Student not found:', req.user._id);
-      return res.status姿勢(404).json({ message: 'Student not found' });
+        return res.status(404).json({ message: 'Student not found' });
     }
 
     if (!student.enrolledTeacher || !mongoose.isValidObjectId(student.enrolledTeacher._id)) {
