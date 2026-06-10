@@ -51,6 +51,7 @@ const UserManagement = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [tabValue, setTabValue] = useState(0);
+  const API_URL = process.env.REACT_APP_API_URL;
   const { getAuthHeader } = useAuth();
 
   useEffect(() => {
@@ -60,7 +61,7 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/admin/users",
+        `${API_URL}/api/admin/users`,
         {
           headers: getAuthHeader(),
         }
@@ -107,7 +108,7 @@ const UserManagement = () => {
   const handleDelete = async (userId) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, {
+        await axios.delete(`${API_URL}/api/admin/users/${userId}`, {
           headers: getAuthHeader(),
         });
         setSuccess("User deleted successfully");
@@ -121,7 +122,7 @@ const UserManagement = () => {
   const handleBlock = async (userId, isBlocked) => {
     try {
       await axios.put(
-        `http://localhost:5000/api/admin/users/${userId}/block`,
+        `${API_URL}/api/admin/users/${userId}/block`,
         {},
         { headers: getAuthHeader() }
       );
@@ -136,13 +137,13 @@ const UserManagement = () => {
     try {
       if (dialogMode === "edit") {
         await axios.put(
-          `http://localhost:5000/api/admin/users/${selectedUser._id}`,
+          `${API_URL}/api/admin/users/${selectedUser._id}`,
           formData,
           { headers: getAuthHeader() }
         );
         setSuccess("User updated successfully");
       } else {
-        await axios.post("http://localhost:5000/api/admin/users", formData, {
+        await axios.post(`${API_URL}/api/admin/users`, formData, {
           headers: getAuthHeader(),
         });
         setSuccess("User created successfully");
