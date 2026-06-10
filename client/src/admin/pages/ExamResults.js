@@ -35,15 +35,16 @@ import axios from "axios";
 import { useAuth } from "../../shared/context/AuthContext";
 
 const ExamResults = () => {
-  const [results, setResults] = useState([]); // Stores fetched exam results
-  const [loading, setLoading] = useState(true); // Controls loading spinner
-  const [error, setError] = useState(""); // Stores any error message
-  const [searchTerm, setSearchTerm] = useState(""); // Stores search input
-  const [selectedResult, setSelectedResult] = useState(null); // Stores result selected for detail view
-  const [openDialog, setOpenDialog] = useState(false); // Controls result detail dialog
-  const [exams, setExams] = useState([]); // Stores list of all exams
-  const [selectedExam, setSelectedExam] = useState(""); // Currently selected exam filter
-  const { getAuthHeader } = useAuth(); // Authentication headers
+   const [results, setResults] = useState([]); // Stores fetched exam results
+   const [loading, setLoading] = useState(true); // Controls loading spinner
+   const [error, setError] = useState(""); // Stores any error message
+   const [searchTerm, setSearchTerm] = useState(""); // Stores search input
+   const [selectedResult, setSelectedResult] = useState(null); // Stores result selected for detail view
+   const [openDialog, setOpenDialog] = useState(false); // Controls result detail dialog
+   const [exams, setExams] = useState([]); // Stores list of all exams
+   const [selectedExam, setSelectedExam] = useState(""); // Currently selected exam filter
+   const API_URL = process.env.REACT_APP_API_URL;
+   const { getAuthHeader } = useAuth(); // Authentication headers
 
   // Fetch exams and all results on component mount
   useEffect(() => {
@@ -51,58 +52,58 @@ const ExamResults = () => {
     fetchAllResults();
   }, []);
 
-  // Fetch all exams
-  const fetchExams = async () => {
-    try {
-      const response = await axios.get(
-        "http://localhost:5000/api/admin/exams",
-        {
-          headers: getAuthHeader(),
-        }
-      );
-      setExams(response.data);
-    } catch (error) {
-      console.error("Error fetching exams:", error);
-    }
-  };
+// Fetch all exams
+   const fetchExams = async () => {
+     try {
+       const response = await axios.get(
+         `${API_URL}/api/admin/exams`,
+         {
+           headers: getAuthHeader(),
+         }
+       );
+       setExams(response.data);
+     } catch (error) {
+       console.error("Error fetching exams:", error);
+     }
+   };
 
-  // Fetch all results
-  const fetchAllResults = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        "http://localhost:5000/api/admin/results",
-        {
-          headers: getAuthHeader(),
-        }
-      );
-      setResults(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching all results:", error);
-      setError("Failed to load results. Please try again.");
-      setLoading(false);
-    }
-  };
+   // Fetch all results
+   const fetchAllResults = async () => {
+     try {
+       setLoading(true);
+       const response = await axios.get(
+         `${API_URL}/api/admin/results`,
+         {
+           headers: getAuthHeader(),
+         }
+       );
+       setResults(response.data);
+       setLoading(false);
+     } catch (error) {
+       console.error("Error fetching all results:", error);
+       setError("Failed to load results. Please try again.");
+       setLoading(false);
+     }
+   };
 
-  // Fetch results for a specific exam
-  const fetchExamResults = async (examId) => {
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        `http://localhost:5000/api/admin/exams/${examId}/results`,
-        {
-          headers: getAuthHeader(),
-        }
-      );
-      setResults(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching exam results:", error);
-      setError("Failed to load exam results. Please try again.");
-      setLoading(false);
-    }
-  };
+   // Fetch results for a specific exam
+   const fetchExamResults = async (examId) => {
+     try {
+       setLoading(true);
+       const response = await axios.get(
+         `${API_URL}/api/admin/exams/${examId}/results`,
+         {
+           headers: getAuthHeader(),
+         }
+       );
+       setResults(response.data);
+       setLoading(false);
+     } catch (error) {
+       console.error("Error fetching exam results:", error);
+       setError("Failed to load exam results. Please try again.");
+       setLoading(false);
+     }
+   };
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
