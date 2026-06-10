@@ -43,6 +43,7 @@ const StudentManagement = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [studentResults, setStudentResults] = useState([]);
   const [loadingResults, setLoadingResults] = useState(false);
+  const API_URL = process.env.REACT_APP_API_URL;
   const { getAuthHeader } = useAuth();
 
   useEffect(() => {
@@ -52,7 +53,7 @@ const StudentManagement = () => {
   const fetchStudents = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/admin/students",
+        `${API_URL}/api/admin/students`,
         {
           headers: getAuthHeader(),
         }
@@ -71,7 +72,7 @@ const StudentManagement = () => {
     try {
       setLoadingResults(true);
       const response = await axios.get(
-        `http://localhost:5000/api/admin/students/${studentId}/results`,
+        `${API_URL}/api/admin/students/${studentId}/results`,
         {
           headers: getAuthHeader(),
         }
@@ -105,7 +106,7 @@ const StudentManagement = () => {
   const handleToggleBlock = async (student) => {
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/admin/users/${student._id}/block`,
+        `${API_URL}/api/admin/users/${student._id}/block`,
         {},
         { headers: getAuthHeader() }
       );
