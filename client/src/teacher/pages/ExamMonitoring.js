@@ -31,9 +31,8 @@ const ExamMonitoring = () => {
   const { examId } = useParams();
   const { user, getAuthHeader } = useAuth();
 
-  /* ------------------------------------------------------------------ */
-  /* 1. Fetch exam details                                              */
-  /* ------------------------------------------------------------------ */
+  /* 1. Fetch exam details */
+
   const fetchExamDetails = useCallback(async () => {
     try {
       const resp = await axios.get(
@@ -55,16 +54,16 @@ const ExamMonitoring = () => {
     return () => websocketService.disconnect();
   }, [fetchExamDetails]);
 
-  /* ------------------------------------------------------------------ */
-  /* 2. WebSocket connection (teacher)                                 */
-  /* ------------------------------------------------------------------ */
+  /* 2. WebSocket connection (teacher) */
+
   useEffect(() => {
     if (!exam || !user?.id) return;
 
     // Build wss://… from the HTTP API URL
     const wsBase = process.env.REACT_APP_API_URL
-      .replace(/^http/, 'ws')   // http → ws
-      .replace(/^ws/, 'wss');   // ensure wss for production
+      .replace(/^http/, 'ws') 
+      //ensure wss for productions 
+      .replace(/^ws/, 'wss'); 
 
     const wsUrl = `${wsBase.endsWith('/') ? wsBase.slice(0, -1) : wsBase}/ws/exams`;
 
@@ -85,14 +84,9 @@ const ExamMonitoring = () => {
     };
   }, [exam, user?.id, examId]);
 
-  /* ------------------------------------------------------------------ */
-  /* 3. Offer handling (pass to CameraMonitor)                         */
-  /* ------------------------------------------------------------------ */
+  /* 3. Offer handling (pass to CameraMonitor) */
+
   const handleStudentOffer = (message) => {
-    // The CameraMonitor component will read the latest offer from the
-    // websocketService (or you can keep a map of peer connections here).
-    // For the minimal fix we just forward the message – the component
-    // already receives the service via props if you need it.
     console.log('Received WebRTC offer from student', message.studentId);
   };
 
@@ -100,9 +94,9 @@ const ExamMonitoring = () => {
     setSelectedStudent(student);
   };
 
-  /* ------------------------------------------------------------------ */
-  /* UI                                                                 */
-  /* ------------------------------------------------------------------ */
+  
+  /* UI  */
+ 
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
