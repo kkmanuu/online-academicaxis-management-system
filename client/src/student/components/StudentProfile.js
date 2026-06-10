@@ -18,7 +18,6 @@ import {
   CircularProgress,
   Alert
 } from '@mui/material';
-import { useAuth } from '../../shared/context/AuthContext';
 import { School as SchoolIcon } from '@mui/icons-material';
 import axios from 'axios';
 import { useAuth } from '../../shared/context/AuthContext';
