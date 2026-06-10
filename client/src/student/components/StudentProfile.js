@@ -21,9 +21,10 @@ import {
 import { useAuth } from '../../shared/context/AuthContext';
 import { School as SchoolIcon } from '@mui/icons-material';
 import axios from 'axios';
+import { useAuth } from '../../shared/context/AuthContext';
 
 // Set axios base URL
-axios.defaults.baseURL = 'http://localhost:5000'; // Adjust to your backend URL
+axios.defaults.baseURL = process.env.REACT_APP_API_URL;
 
 const StudentProfile = () => {
   const { user, setUser } = useAuth();
