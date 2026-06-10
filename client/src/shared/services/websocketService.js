@@ -4,11 +4,13 @@ class WebSocketService {
     this.onMessageCallback = null;
   }
 
-  connect(examId, role, userId) {
+  connect(examId, role, userId, wsUrl) {
     const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     const protocol = API_URL.startsWith('https') ? 'wss' : 'ws';
     const host = API_URL.replace(/^https?:\/\//, '');
-    this.socket = new WebSocket(`${protocol}://${host}/ws/exam/${examId}/${role}/${userId}`);
+
+    const finalWsUrl = wsUrl || `${protocol}://${host}/ws/exams`;
+    this.socket = new WebSocket(`${finalWsUrl}?examId=${examId}&role=${role}&userId=${userId}`);
 
     this.socket.onopen = () => {
       console.log('WebSocket connection established');

@@ -123,7 +123,7 @@ const ExamInterface = () => {
       setError("WebSocket URL is not configured.");
       return;
     }
-    const ws = new WebSocket(`${WS_URL}?examId=${examId}&role=student&userId=${user._id}`);
+    const ws = new WebSocket(`${WS_URL}/exams?examId=${examId}&role=student&userId=${user._id}`);
     wsRef.current = ws;
 
     ws.onopen = () => {

@@ -66,7 +66,7 @@ const ExamMonitoring = () => {
       .replace(/^http/, 'ws')   // http → ws
       .replace(/^ws/, 'wss');   // ensure wss for production
 
-    const wsUrl = `${wsBase.endsWith('/') ? wsBase.slice(0, -1) : wsBase}/ws`;
+    const wsUrl = `${wsBase.endsWith('/') ? wsBase.slice(0, -1) : wsBase}/ws/exams`;
 
     console.log('[WS] Teacher connecting →', wsUrl);
 
