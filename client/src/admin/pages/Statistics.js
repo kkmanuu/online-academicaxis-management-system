@@ -26,11 +26,14 @@ import {
   Cell,
 } from "recharts";
 import axios from "axios";
+import { useAuth } from "../../shared/context/AuthContext";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 const Statistics = () => {
-  const [loading, setLoading] = useState(true);
+   const [loading, setLoading] = useState(true);
+   const API_URL = process.env.REACT_APP_API_URL;
+   const { getAuthHeader } = useAuth();
   const [stats, setStats] = useState({
     userStats: {
       total: 0,
@@ -63,7 +66,10 @@ const Statistics = () => {
   const fetchStatistics = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/admin/statistics"
+        `${API_URL}/api/admin/statistics`,
+        {
+          headers: getAuthHeader(),
+        }
       );
       setStats(response.data);
       setLoading(false);
