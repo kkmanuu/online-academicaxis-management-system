@@ -13,11 +13,12 @@ examHandler.initialize(server, "/ws/exams");
 
 // Middleware
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "https://academicsystem-g393.onrender.com"
-  ],
-  credentials: true
+   origin: [
+     "http://localhost:3000",
+     "https://academicsystem-g393.onrender.com",
+     "https://academicaxissystem.onrender.com"
+   ],
+   credentials: true
 }));
 app.use(express.json());
 
