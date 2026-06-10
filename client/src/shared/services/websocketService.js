@@ -5,7 +5,10 @@ class WebSocketService {
   }
 
   connect(examId, role, userId) {
-    this.socket = new WebSocket(`ws://localhost:5000/ws/exam/${examId}/${role}/${userId}`);
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const protocol = API_URL.startsWith('https') ? 'wss' : 'ws';
+    const host = API_URL.replace(/^https?:\/\//, '');
+    this.socket = new WebSocket(`${protocol}://${host}/ws/exam/${examId}/${role}/${userId}`);
 
     this.socket.onopen = () => {
       console.log('WebSocket connection established');
