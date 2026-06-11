@@ -1,32 +1,4 @@
 import React, { useState, useEffect } from "react";
-import {
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  Box,
-  Alert,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Avatar,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Paper,
-  Divider,
-} from "@mui/material";
-import { School as SchoolIcon } from "@mui/icons-material";
 import axios from "axios";
 import { useAuth } from "../../shared/context/AuthContext";
 
@@ -40,8 +12,9 @@ const CourseEnrollment = () => {
   const [success, setSuccess] = useState("");
   const [teachers, setTeachers] = useState([]);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
-  const [showTeacherDialog, setShowTeacherDialog] = useState(false);
+  const [showTeacherModal, setShowTeacherModal] = useState(false);
   const [selectedTeacherId, setSelectedTeacherId] = useState("");
+  const [enrollingId, setEnrollingId] = useState(null);
   const { getAuthHeader } = useAuth();
 
   useEffect(() => {
@@ -51,31 +24,46 @@ const CourseEnrollment = () => {
       return;
     }
     fetchData();
-  }, [getAuthHeader]);
+  }, []);
+
+  // Open/close Bootstrap modal imperatively
+  useEffect(() => {
+    let modal;
+    const el = document.getElementById("teacherModal");
+    if (el) {
+      if (showTeacherModal) {
+        import("bootstrap").then(({ Modal }) => {
+          modal = Modal.getOrCreateInstance(el);
+          modal.show();
+        });
+      } else {
+        import("bootstrap").then(({ Modal }) => {
+          modal = Modal.getInstance(el);
+          if (modal) modal.hide();
+        });
+      }
+    }
+  }, [showTeacherModal]);
 
   const fetchData = async () => {
     try {
-      const teacherRes = await axios.get(
-        `${API_URL}/api/student/my-teacher`,
-        {
-          headers: getAuthHeader(),
-        }
-      );
+      setLoading(true);
 
+      const teacherRes = await axios.get(`${API_URL}/api/student/my-teacher`, {
+        headers: getAuthHeader(),
+      });
       if (teacherRes.data && !teacherRes.data.message) {
         setSelectedTeacher(teacherRes.data);
         setSelectedTeacherId(teacherRes.data._id);
       } else {
         setSelectedTeacher(null);
         setSelectedTeacherId("");
-        setShowTeacherDialog(true);
+        setShowTeacherModal(true);
       }
 
       const teachersRes = await axios.get(
         `${API_URL}/api/student/available-teachers`,
-        {
-          headers: getAuthHeader(),
-        }
+        { headers: getAuthHeader() }
       );
       setTeachers(teachersRes.data);
 
@@ -89,29 +77,29 @@ const CourseEnrollment = () => {
       ]);
 
       if (availableRes.data.message) {
-        setShowTeacherDialog(true);
+        setShowTeacherModal(true);
       } else {
         setAvailableCourses(availableRes.data);
       }
-
       setEnrolledCourses(enrolledRes.data);
       setLoading(false);
     } catch (err) {
-      console.error("Error fetching data:", {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status,
-        code: err.code,
-      });
-      let errorMessage = err.response?.data?.message || err.message;
-      if (err.code === 'ECONNABORTED') {
-        errorMessage = "Request timed out. Please try again in a moment.";
-      } else if (err.message.includes("Network Error")) {
-        errorMessage = "Unable to connect to the server. Please check your internet connection or try again later.";
-      }
-      setError(errorMessage || "Failed to fetch data. Please try again.");
+      let msg = err.response?.data?.message || err.message;
+      if (err.code === "ECONNABORTED") msg = "Request timed out. Please try again.";
+      else if (err.message.includes("Network Error"))
+        msg = "Unable to connect to the server. Check your connection.";
+      setError(msg || "Failed to fetch data.");
       setLoading(false);
     }
+  };
+
+  const notify = (type, msg) => {
+    if (type === "success") setSuccess(msg);
+    else setError(msg);
+    setTimeout(() => {
+      setSuccess("");
+      setError("");
+    }, 3500);
   };
 
   const handleSelectTeacher = async (teacherId) => {
@@ -119,427 +107,365 @@ const CourseEnrollment = () => {
       await axios.post(
         `${API_URL}/api/student/select-teacher/${teacherId}`,
         {},
-        {
-          headers: getAuthHeader(),
-        }
+        { headers: getAuthHeader() }
       );
-      setSuccess("🎉 Teacher selected successfully!");
-      setShowTeacherDialog(false);
+      notify("success", "Teacher selected successfully!");
+      setShowTeacherModal(false);
       fetchData();
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      console.error("Error selecting teacher:", {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status,
-      });
-      setError(err.response?.data?.message || "Failed to select teacher");
-      setTimeout(() => setError(""), 3000);
+      notify("error", err.response?.data?.message || "Failed to select teacher.");
     }
   };
 
-  const handleTeacherChange = async (event) => {
-    const teacherId = event.target.value;
-    setSelectedTeacherId(teacherId);
-
-    if (teacherId) {
-      try {
-        await axios.post(
-          `${API_URL}/api/student/select-teacher/${teacherId}`,
-          {},
-          {
-            headers: getAuthHeader(),
-          }
-        );
-        setSuccess("🎉 Teacher selected successfully!");
-        fetchData();
-        setTimeout(() => setSuccess(""), 3000);
-      } catch (err) {
-        console.error("Error changing teacher:", {
-          message: err.message,
-          response: err.response?.data,
-          status: err.response?.status,
-        });
-        setError(err.response?.data?.message || "Failed to select teacher");
-        setTimeout(() => setError(""), 3000);
-      }
+  const handleTeacherChange = async (e) => {
+    const id = e.target.value;
+    setSelectedTeacherId(id);
+    if (!id) return;
+    try {
+      await axios.post(
+        `${API_URL}/api/student/select-teacher/${id}`,
+        {},
+        { headers: getAuthHeader() }
+      );
+      notify("success", "Teacher updated successfully!");
+      fetchData();
+    } catch (err) {
+      notify("error", err.response?.data?.message || "Failed to update teacher.");
     }
   };
 
   const handleEnroll = async (courseId) => {
     try {
+      setEnrollingId(courseId);
       await axios.post(
         `${API_URL}/api/student/enroll/${courseId}`,
         {},
-        {
-          headers: getAuthHeader(),
-        }
+        { headers: getAuthHeader() }
       );
-      setSuccess("✅ Successfully enrolled in the course!");
+      notify("success", "Successfully enrolled in the course!");
       fetchData();
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      console.error("Error enrolling in course:", {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status,
-      });
-      setError(err.response?.data?.message || "Failed to enroll in the course");
-      setTimeout(() => setError(""), 3000);
+      notify("error", err.response?.data?.message || "Failed to enroll.");
+    } finally {
+      setEnrollingId(null);
     }
   };
 
-  if (loading) {
+  if (loading)
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="60vh"
-        sx={{ backgroundColor: "#f5f7fa" }}
-      >
-        <CircularProgress color="primary" />
-      </Box>
+      <div className="d-flex align-items-center justify-content-center py-5">
+        <div className="text-center">
+          <div className="spinner-border text-primary mb-3" role="status" style={{ width: 40, height: 40 }}></div>
+          <p className="text-muted small mb-0">Loading courses…</p>
+        </div>
+      </div>
     );
-  }
 
   return (
-    <Container
-      maxWidth="lg"
-      sx={{
-        mt: 3,
-        mb: 4,
-        background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-        borderRadius: 3,
-        py: 3,
-      }}
-    >
-      {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 2, borderRadius: 1, maxWidth: "lg", mx: "auto" }}
+    <div className="p-3 p-md-4">
+      {/* Toasts / Alerts */}
+      {(error || success) && (
+        <div
+          className={`alert alert-dismissible border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center gap-2 ${
+            success ? "alert-success" : "alert-danger"
+          }`}
+          role="alert"
         >
-          {error}
-        </Alert>
-      )}
-      {success && (
-        <Alert
-          severity="success"
-          sx={{ mb: 2, borderRadius: 1, maxWidth: "lg", mx: "auto" }}
-        >
-          {success}
-        </Alert>
+          <i className={`bi ${success ? "bi-check-circle-fill" : "bi-exclamation-triangle-fill"} fs-5`}></i>
+          <span>{success || error}</span>
+          <button
+            type="button"
+            className="btn-close ms-auto"
+            onClick={() => { setSuccess(""); setError(""); }}
+          ></button>
+        </div>
       )}
 
-      {/* TEACHER SELECTION */}
-      <Paper
-        elevation={6}
-        sx={{
-          p: 2,
-          mb: 3,
-          borderRadius: 2,
-          backgroundColor: "#ffffff",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-        }}
-      >
-        <Typography
-          variant="h5"
-          sx={{ mb: 2, fontWeight: "bold", color: "#1a237e" }}
-        >
-          📚 Select Your Teacher
-        </Typography>
-        <FormControl fullWidth>
-          <InputLabel id="teacher-select-label">Teacher</InputLabel>
-          <Select
-            labelId="teacher-select-label"
-            id="teacher-select"
-            value={selectedTeacherId}
-            label="Teacher"
-            onChange={handleTeacherChange}
-            sx={{
-              borderRadius: 1,
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#3f51b5",
-              },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#3f51b5",
-              },
-            }}
-          >
-            <MenuItem value="">
-              <em>Select a teacher</em>
-            </MenuItem>
-            {teachers.map((teacher) => (
-              <MenuItem key={teacher._id} value={teacher._id}>
-                {teacher.name} ({teacher.email})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Paper>
+      {/* Page Header */}
+      <div className="mb-4">
+        <h4 className="fw-bold text-dark mb-1">Course Enrollment</h4>
+        <p className="text-muted mb-0 small">
+          Select a teacher and enroll in their offered courses.
+        </p>
+      </div>
 
-      {/* MY ASSIGNED TEACHER */}
-      {selectedTeacher && (
-        <Paper
-          elevation={6}
-          sx={{
-            p: 2,
-            mb: 3,
-            borderRadius: 2,
-            backgroundColor: "#e6f7e6",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-            transition: "transform 0.2s",
-            "&:hover": {
-              transform: "translateY(-4px)",
-              boxShadow: "0 8px 30px rgba(0,0,0,0.15)",
-            },
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{ mb: 2, fontWeight: "bold", color: "#1a237e" }}
-          >
-            👨‍🏫 My Assigned Teacher
-          </Typography>
-          <Box display="flex" alignItems="center">
-            <Avatar
-              src={
-                selectedTeacher.profilePicture ||
-                "https://images.unsplash.com/photo-1516321310764-8d9a662d6929?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-              }
-              sx={{
-                width: 80,
-                height: 80,
-                mr: 2,
-                border: "2px solid #fff",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              }}
-            >
-              {selectedTeacher.name.charAt(0)}
-            </Avatar>
-            <Box>
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: "bold", color: "#1a237e" }}
+      {/* ── TEACHER SELECTOR CARD ── */}
+      <div className="card border-0 shadow-sm mb-4">
+        <div className="card-body p-4">
+          <div className="row align-items-center g-4">
+            {/* Assigned teacher info */}
+            <div className="col-md-6">
+              <p className="text-muted small text-uppercase fw-semibold mb-2" style={{ letterSpacing: "0.07em" }}>
+                <i className="bi bi-person-badge me-1"></i>Assigned Teacher
+              </p>
+              {selectedTeacher ? (
+                <div className="d-flex align-items-center gap-3">
+                  <div
+                    className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
+                    style={{ width: 48, height: 48, fontSize: 18 }}
+                  >
+                    {selectedTeacher.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="mb-0 fw-bold text-dark">{selectedTeacher.name}</p>
+                    <p className="mb-0 text-muted small">{selectedTeacher.email}</p>
+                  </div>
+                  <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-3 ms-1 small">
+                    Active
+                  </span>
+                </div>
+              ) : (
+                <div className="d-flex align-items-center gap-2 text-muted">
+                  <div
+                    className="rounded-circle bg-light d-flex align-items-center justify-content-center"
+                    style={{ width: 48, height: 48 }}
+                  >
+                    <i className="bi bi-person-x fs-5 text-secondary"></i>
+                  </div>
+                  <span className="small">No teacher selected yet.</span>
+                </div>
+              )}
+            </div>
+
+            {/* Select dropdown */}
+            <div className="col-md-6">
+              <label
+                htmlFor="teacherSelect"
+                className="form-label text-muted small text-uppercase fw-semibold"
+                style={{ letterSpacing: "0.07em" }}
               >
-                {selectedTeacher.name}
-              </Typography>
-              <Typography sx={{ color: "#455a64" }}>
-                {selectedTeacher.email}
-              </Typography>
-            </Box>
-          </Box>
-        </Paper>
-      )}
+                Change Teacher
+              </label>
+              <select
+                id="teacherSelect"
+                className="form-select form-select-sm rounded-2 border-0 bg-light"
+                value={selectedTeacherId}
+                onChange={handleTeacherChange}
+                style={{ height: 40 }}
+              >
+                <option value="">— Select a teacher —</option>
+                {teachers.map((t) => (
+                  <option key={t._id} value={t._id}>
+                    {t.name} ({t.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {/* AVAILABLE COURSES */}
-      <Typography
-        variant="h5"
-        sx={{ mb: 2, fontWeight: "bold", color: "#1a237e" }}
-      >
-        🧠 Available Courses
-      </Typography>
-      <Grid container spacing={2}>
+      {/* ── AVAILABLE COURSES ── */}
+      <div className="mb-4">
+        <div className="d-flex align-items-center justify-content-between mb-3">
+          <div>
+            <h5 className="fw-bold text-dark mb-0">Available Courses</h5>
+            <p className="text-muted small mb-0">
+              {availableCourses.length} course{availableCourses.length !== 1 ? "s" : ""} offered by your teacher
+            </p>
+          </div>
+        </div>
+
         {availableCourses.length > 0 ? (
-          availableCourses.map((course) => (
-            <Grid item xs={12} sm={6} lg={4} key={course._id}>
-              <Card
-                elevation={3}
-                sx={{
-                  borderRadius: 2,
-                  backgroundColor: "#fff7e6",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    boxShadow: "0 8px 30px rgba(0,0,0,0.15)",
-                  },
-                }}
-              >
-                <CardContent>
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: "bold", color: "#1a237e" }}
-                  >
-                    {course.name}
-                  </Typography>
-                  <Typography sx={{ color: "#455a64", mb: 1 }}>
-                    Teacher: {course.teacher.name}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: "#455a64" }}>
-                    {course.description}
-                  </Typography>
-                </CardContent>
-                <CardActions sx={{ p: 2 }}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => handleEnroll(course._id)}
-                    startIcon={<SchoolIcon />}
-                    sx={{
-                      backgroundColor: "#3f51b5",
-                      "&:hover": { backgroundColor: "#303f9f" },
-                      borderRadius: 1,
-                      textTransform: "none",
-                      fontSize: "0.9rem",
-                      px: 2,
-                      py: 1,
+          <div className="row g-3">
+            {availableCourses.map((course) => (
+              <div key={course._id} className="col-sm-6 col-xl-4">
+                <div className="card border-0 shadow-sm h-100">
+                  {/* Colored top accent */}
+                  <div
+                    className="rounded-top"
+                    style={{
+                      height: 4,
+                      background: "linear-gradient(90deg,#4f46e5,#818cf8)",
                     }}
-                  >
-                    Enroll Now
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))
-        ) : (
-          <Paper
-            sx={{
-              p: 3,
-              textAlign: "center",
-              width: "100%",
-              borderRadius: 2,
-              boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-            }}
-          >
-            <Typography variant="h6" sx={{ color: "#455a64" }}>
-              No available courses. Please select a teacher.
-            </Typography>
-          </Paper>
-        )}
-      </Grid>
-
-      {/* ENROLLED COURSES */}
-      <Typography
-        variant="h5"
-        sx={{ mt: 4, mb: 2, fontWeight: "bold", color: "#1a237e" }}
-      >
-        🎓 My Enrolled Courses
-      </Typography>
-      <Grid container spacing={2}>
-        {enrolledCourses.length > 0 ? (
-          enrolledCourses.map((course) => (
-            <Grid item xs={12} sm={6} lg={4} key={course._id}>
-              <Card
-                elevation={3}
-                sx={{
-                  borderRadius: 2,
-                  backgroundColor: "#f2f2f2",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    boxShadow: "0 8px 30px rgba(0,0,0,0.15)",
-                  },
-                }}
-              >
-                <CardContent>
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: "bold", color: "#1a237e" }}
-                  >
-                    {course.name}
-                  </Typography>
-                  <Typography sx={{ color: "#455a64", mb: 1 }}>
-                    Teacher: {course.teacher.name}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: "#455a64" }}>
-                    {course.description}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))
-        ) : (
-          <Paper
-            sx={{
-              p: 3,
-              textAlign: "center",
-              width: "100%",
-              borderRadius: 2,
-              boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-            }}
-          >
-            <Typography variant="h6" sx={{ color: "#455a64" }}>
-              No enrolled courses yet.
-            </Typography>
-          </Paper>
-        )}
-      </Grid>
-
-      {/* DIALOG FOR TEACHER SELECTION */}
-      <Dialog
-        open={showTeacherDialog}
-        onClose={() => setShowTeacherDialog(false)}
-        maxWidth="sm"
-        fullWidth
-        sx={{
-          "& .MuiDialog-paper": {
-            borderRadius: 2,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-          },
-        }}
-      >
-        <DialogTitle sx={{ fontWeight: "bold", color: "#1a237e" }}>
-          Select a Teacher
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body1" sx={{ mb: 2, color: "#455a64" }}>
-            Please select a teacher to view and enroll in their courses.
-          </Typography>
-          <Divider sx={{ my: 1 }} />
-          <List>
-            {teachers.map((teacher) => (
-              <ListItem
-                button
-                onClick={() => handleSelectTeacher(teacher._id)}
-                key={teacher._id}
-                sx={{
-                  borderRadius: 1,
-                  "&:hover": { backgroundColor: "#e3f2fd" },
-                }}
-              >
-                <ListItemAvatar>
-                  <Avatar
-                    src={
-                      teacher.profilePicture ||
-                      "https://images.unsplash.com/photo-1516321310764-8d9a662d6929?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                    }
-                    sx={{ width: 48, height: 48, border: "2px solid #fff" }}
-                  >
-                    {teacher.name.charAt(0)}
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={
-                    <Typography sx={{ fontWeight: "bold", color: "#1a237e" }}>
-                      {teacher.name}
-                    </Typography>
-                  }
-                  secondary={
-                    <Typography sx={{ color: "#455a64" }}>
-                      {teacher.email}
-                    </Typography>
-                  }
-                />
-              </ListItem>
+                  ></div>
+                  <div className="card-body p-4 d-flex flex-column">
+                    <div className="d-flex align-items-start gap-3 mb-3">
+                      <div
+                        className="d-flex align-items-center justify-content-center rounded-2 bg-primary bg-opacity-10 flex-shrink-0"
+                        style={{ width: 44, height: 44 }}
+                      >
+                        <i className="bi bi-journal-code text-primary fs-5"></i>
+                      </div>
+                      <div className="flex-grow-1">
+                        <h6 className="fw-bold text-dark mb-1 lh-sm">
+                          {course.name}
+                        </h6>
+                        <p className="text-muted mb-0 small">
+                          <i className="bi bi-person me-1"></i>
+                          {course.teacher?.name || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-muted small flex-grow-1 mb-3 lh-base">
+                      {course.description || "No description available."}
+                    </p>
+                    <button
+                      className="btn btn-primary btn-sm w-100 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                      onClick={() => handleEnroll(course._id)}
+                      disabled={enrollingId === course._id}
+                      style={{ height: 38 }}
+                    >
+                      {enrollingId === course._id ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm"></span>
+                          Enrolling…
+                        </>
+                      ) : (
+                        <>
+                          <i className="bi bi-plus-circle"></i>
+                          Enroll Now
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
             ))}
-          </List>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setShowTeacherDialog(false)}
-            sx={{
-              color: "#3f51b5",
-              textTransform: "none",
-              "&:hover": { backgroundColor: "#f5f5f5" },
-            }}
-          >
-            Cancel
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+          </div>
+        ) : (
+          <div className="card border-0 shadow-sm border-dashed">
+            <div className="card-body text-center py-5">
+              <i className="bi bi-journals fs-1 text-muted opacity-50 d-block mb-2"></i>
+              <p className="text-muted mb-1 fw-medium">No courses available</p>
+              <p className="text-muted small mb-0">
+                Select a teacher to see their courses.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── ENROLLED COURSES ── */}
+      <div>
+        <div className="d-flex align-items-center justify-content-between mb-3">
+          <div>
+            <h5 className="fw-bold text-dark mb-0">My Enrolled Courses</h5>
+            <p className="text-muted small mb-0">
+              {enrolledCourses.length} course{enrolledCourses.length !== 1 ? "s" : ""} in progress
+            </p>
+          </div>
+        </div>
+
+        {enrolledCourses.length > 0 ? (
+          <div className="row g-3">
+            {enrolledCourses.map((course) => (
+              <div key={course._id} className="col-sm-6 col-xl-4">
+                <div className="card border-0 shadow-sm h-100">
+                  <div
+                    className="rounded-top"
+                    style={{
+                      height: 4,
+                      background: "linear-gradient(90deg,#10b981,#34d399)",
+                    }}
+                  ></div>
+                  <div className="card-body p-4">
+                    <div className="d-flex align-items-start gap-3 mb-3">
+                      <div
+                        className="d-flex align-items-center justify-content-center rounded-2 bg-success bg-opacity-10 flex-shrink-0"
+                        style={{ width: 44, height: 44 }}
+                      >
+                        <i className="bi bi-bookmark-check-fill text-success fs-5"></i>
+                      </div>
+                      <div>
+                        <h6 className="fw-bold text-dark mb-1 lh-sm">
+                          {course.name}
+                        </h6>
+                        <p className="text-muted mb-0 small">
+                          <i className="bi bi-person me-1"></i>
+                          {course.teacher?.name || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-muted small mb-3 lh-base">
+                      {course.description || "No description available."}
+                    </p>
+                    <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 small fw-semibold">
+                      <i className="bi bi-check2-circle me-1"></i>Enrolled
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="card border-0 shadow-sm">
+            <div className="card-body text-center py-5">
+              <i className="bi bi-collection fs-1 text-muted opacity-50 d-block mb-2"></i>
+              <p className="text-muted mb-1 fw-medium">No enrolled courses</p>
+              <p className="text-muted small mb-0">
+                Browse available courses above to get started.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── TEACHER SELECTION MODAL ── */}
+      <div
+        className="modal fade"
+        id="teacherModal"
+        tabIndex="-1"
+        aria-labelledby="teacherModalLabel"
+        aria-hidden="true"
+      >
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content border-0 shadow-lg rounded-4">
+            <div className="modal-header border-0 pb-0 px-4 pt-4">
+              <div>
+                <h5 className="modal-title fw-bold text-dark" id="teacherModalLabel">
+                  Choose Your Teacher
+                </h5>
+                <p className="text-muted small mb-0">
+                  Select a teacher to access their courses.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn-close ms-auto"
+                onClick={() => setShowTeacherModal(false)}
+                aria-label="Close"
+              ></button>
+            </div>
+            <div className="modal-body px-4 pt-3 pb-4">
+              {teachers.length === 0 ? (
+                <div className="text-center py-4">
+                  <i className="bi bi-person-x fs-1 text-muted opacity-50 d-block mb-2"></i>
+                  <p className="text-muted small mb-0">No teachers available at this time.</p>
+                </div>
+              ) : (
+                <div className="d-flex flex-column gap-2">
+                  {teachers.map((teacher) => (
+                    <button
+                      key={teacher._id}
+                      className="btn btn-light text-start d-flex align-items-center gap-3 rounded-3 border p-3"
+                      style={{ transition: "all .15s" }}
+                      onClick={() => handleSelectTeacher(teacher._id)}
+                    >
+                      <div
+                        className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
+                        style={{ width: 42, height: 42, fontSize: 16 }}
+                      >
+                        {teacher.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-grow-1 overflow-hidden">
+                        <p className="mb-0 fw-semibold text-dark text-truncate">
+                          {teacher.name}
+                        </p>
+                        <p className="mb-0 text-muted small text-truncate">
+                          {teacher.email}
+                        </p>
+                      </div>
+                      <i className="bi bi-arrow-right-circle text-primary fs-5 flex-shrink-0"></i>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
