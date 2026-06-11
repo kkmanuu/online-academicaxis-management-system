@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../shared/context/AuthContext";
+import Modal from "bootstrap/js/dist/modal";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -26,24 +27,20 @@ const CourseEnrollment = () => {
     fetchData();
   }, []);
 
-  // Open/close Bootstrap modal imperatively
-  useEffect(() => {
-    let modal;
-    const el = document.getElementById("teacherModal");
-    if (el) {
-      if (showTeacherModal) {
-        import("bootstrap").then(({ Modal }) => {
-          modal = Modal.getOrCreateInstance(el);
-          modal.show();
-        });
-      } else {
-        import("bootstrap").then(({ Modal }) => {
-          modal = Modal.getInstance(el);
-          if (modal) modal.hide();
-        });
-      }
-    }
-  }, [showTeacherModal]);
+// Open/close Bootstrap modal imperatively (uses global bootstrap from CDN)
+   useEffect(() => {
+     const el = document.getElementById("teacherModal");
+     if (el) {
+       const modalEl = el;
+       if (showTeacherModal) {
+         const modal = Modal.getOrCreateInstance(modalEl);
+         modal.show();
+       } else {
+         const modal = Modal.getInstance(modalEl);
+         if (modal) modal.hide();
+       }
+     }
+   }, [showTeacherModal]);
 
   const fetchData = async () => {
     try {
