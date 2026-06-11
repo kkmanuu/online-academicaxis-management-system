@@ -35,16 +35,16 @@ import axios from "axios";
 import { useAuth } from "../../shared/context/AuthContext";
 
 const ExamResults = () => {
-   const [results, setResults] = useState([]); // Stores fetched exam results
-   const [loading, setLoading] = useState(true); // Controls loading spinner
-   const [error, setError] = useState(""); // Stores any error message
-   const [searchTerm, setSearchTerm] = useState(""); // Stores search input
-   const [selectedResult, setSelectedResult] = useState(null); // Stores result selected for detail view
-   const [openDialog, setOpenDialog] = useState(false); // Controls result detail dialog
-   const [exams, setExams] = useState([]); // Stores list of all exams
-   const [selectedExam, setSelectedExam] = useState(""); // Currently selected exam filter
+   const [results, setResults] = useState([]);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState("");
+   const [searchTerm, setSearchTerm] = useState("");
+   const [selectedResult, setSelectedResult] = useState(null);
+   const [openDialog, setOpenDialog] = useState(false);
+   const [exams, setExams] = useState([]); 
+   const [selectedExam, setSelectedExam] = useState("");
    const API_URL = process.env.REACT_APP_API_URL;
-   const { getAuthHeader } = useAuth(); // Authentication headers
+   const { getAuthHeader } = useAuth();
 
   // Fetch exams and all results on component mount
   useEffect(() => {
