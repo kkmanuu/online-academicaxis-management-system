@@ -14,7 +14,7 @@ import {
   SidebarShell,
   TopbarShell,
   PageHeader,
-} from "./useBootstrap";
+} from "../../shared/useBootstrap";
 
 import ExamManagement   from "./ExamManagement";
 import QuestionManagement from "./QuestionManagement";

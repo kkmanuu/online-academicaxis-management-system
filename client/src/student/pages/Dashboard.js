@@ -15,7 +15,7 @@ import {
   DashboardShell,
   SidebarShell,
   TopbarShell,
-} from "./useBootstrap";
+} from "../../shared/useBootstrap";
 
 import CourseEnrollment from "./CourseEnrollment";
 import StudentProfile from "../components/StudentProfile";
