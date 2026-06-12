@@ -27,25 +27,22 @@ const CourseEnrollment = () => {
     fetchData();
   }, []);
 
-// Open/close Bootstrap modal imperatively (uses global bootstrap from CDN)
-   useEffect(() => {
-     const el = document.getElementById("teacherModal");
-     if (el) {
-       const modalEl = el;
-       if (showTeacherModal) {
-         const modal = Modal.getOrCreateInstance(modalEl);
-         modal.show();
-       } else {
-         const modal = Modal.getInstance(modalEl);
-         if (modal) modal.hide();
-       }
-     }
-   }, [showTeacherModal]);
+  useEffect(() => {
+    const el = document.getElementById("teacherModal");
+    if (el) {
+      if (showTeacherModal) {
+        const modal = Modal.getOrCreateInstance(el);
+        modal.show();
+      } else {
+        const modal = Modal.getInstance(el);
+        if (modal) modal.hide();
+      }
+    }
+  }, [showTeacherModal]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-
       const teacherRes = await axios.get(`${API_URL}/api/student/my-teacher`, {
         headers: getAuthHeader(),
       });
@@ -58,19 +55,14 @@ const CourseEnrollment = () => {
         setShowTeacherModal(true);
       }
 
-      const teachersRes = await axios.get(
-        `${API_URL}/api/student/available-teachers`,
-        { headers: getAuthHeader() }
-      );
+      const teachersRes = await axios.get(`${API_URL}/api/student/available-teachers`, {
+        headers: getAuthHeader(),
+      });
       setTeachers(teachersRes.data);
 
       const [availableRes, enrolledRes] = await Promise.all([
-        axios.get(`${API_URL}/api/student/available-courses`, {
-          headers: getAuthHeader(),
-        }),
-        axios.get(`${API_URL}/api/student/enrolled-courses`, {
-          headers: getAuthHeader(),
-        }),
+        axios.get(`${API_URL}/api/student/available-courses`, { headers: getAuthHeader() }),
+        axios.get(`${API_URL}/api/student/enrolled-courses`, { headers: getAuthHeader() }),
       ]);
 
       if (availableRes.data.message) {
@@ -150,255 +142,261 @@ const CourseEnrollment = () => {
 
   if (loading)
     return (
-      <div className="d-flex align-items-center justify-content-center py-5">
+      <div style={{ minHeight: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="text-center">
-          <div className="spinner-border text-primary mb-3" role="status" style={{ width: 40, height: 40 }}></div>
-          <p className="text-muted small mb-0">Loading courses…</p>
+          <div style={{ width: 40, height: 40, border: "3px solid #e2e8f0", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto .75rem" }}></div>
+          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+          <p style={{ color: "#64748b", fontSize: ".875rem", margin: 0 }}>Loading courses…</p>
         </div>
       </div>
     );
 
   return (
-    <div className="p-3 p-md-4">
-      {/* Toasts / Alerts */}
-      {(error || success) && (
-        <div
-          className={`alert alert-dismissible border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center gap-2 ${
-            success ? "alert-success" : "alert-danger"
-          }`}
-          role="alert"
-        >
-          <i className={`bi ${success ? "bi-check-circle-fill" : "bi-exclamation-triangle-fill"} fs-5`}></i>
-          <span>{success || error}</span>
-          <button
-            type="button"
-            className="btn-close ms-auto"
-            onClick={() => { setSuccess(""); setError(""); }}
-          ></button>
-        </div>
-      )}
-
+    <div>
       {/* Page Header */}
-      <div className="mb-4">
-        <h4 className="fw-bold text-dark mb-1">Course Enrollment</h4>
-        <p className="text-muted mb-0 small">
-          Select a teacher and enroll in their offered courses.
-        </p>
+      <div className="page-header">
+        <h1 className="page-title">Course Enrollment</h1>
+        <p className="page-subtitle mb-0">Select a teacher and enroll in their offered courses.</p>
       </div>
 
-      {/* ── TEACHER SELECTOR CARD ── */}
-      <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body p-4">
-          <div className="row align-items-center g-4">
-            {/* Assigned teacher info */}
-            <div className="col-md-6">
-              <p className="text-muted small text-uppercase fw-semibold mb-2" style={{ letterSpacing: "0.07em" }}>
-                <i className="bi bi-person-badge me-1"></i>Assigned Teacher
-              </p>
-              {selectedTeacher ? (
-                <div className="d-flex align-items-center gap-3">
-                  <div
-                    className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                    style={{ width: 48, height: 48, fontSize: 18 }}
-                  >
-                    {selectedTeacher.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="mb-0 fw-bold text-dark">{selectedTeacher.name}</p>
-                    <p className="mb-0 text-muted small">{selectedTeacher.email}</p>
-                  </div>
-                  <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-3 ms-1 small">
-                    Active
-                  </span>
-                </div>
-              ) : (
-                <div className="d-flex align-items-center gap-2 text-muted">
-                  <div
-                    className="rounded-circle bg-light d-flex align-items-center justify-content-center"
-                    style={{ width: 48, height: 48 }}
-                  >
-                    <i className="bi bi-person-x fs-5 text-secondary"></i>
-                  </div>
-                  <span className="small">No teacher selected yet.</span>
-                </div>
-              )}
-            </div>
+      <div className="content-area">
+        {/* Toast / Alert */}
+        {(error || success) && (
+          <div
+            style={{
+              background: success ? "#f0fdf4" : "#fef2f2",
+              border: `1px solid ${success ? "#bbf7d0" : "#fecaca"}`,
+              borderRadius: 10,
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              fontSize: ".875rem",
+              color: success ? "#15803d" : "#b91c1c",
+              marginBottom: "1.5rem",
+            }}
+          >
+            <i className={`bi ${success ? "bi-check-circle-fill" : "bi-exclamation-triangle-fill"}`}></i>
+            <span style={{ flex: 1 }}>{success || error}</span>
+            <button
+              style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", fontSize: "1rem" }}
+              onClick={() => { setSuccess(""); setError(""); }}
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
+          </div>
+        )}
 
-            {/* Select dropdown */}
-            <div className="col-md-6">
-              <label
-                htmlFor="teacherSelect"
-                className="form-label text-muted small text-uppercase fw-semibold"
-                style={{ letterSpacing: "0.07em" }}
-              >
-                Change Teacher
-              </label>
-              <select
-                id="teacherSelect"
-                className="form-select form-select-sm rounded-2 border-0 bg-light"
-                value={selectedTeacherId}
-                onChange={handleTeacherChange}
-                style={{ height: 40 }}
-              >
-                <option value="">— Select a teacher —</option>
-                {teachers.map((t) => (
-                  <option key={t._id} value={t._id}>
-                    {t.name} ({t.email})
-                  </option>
-                ))}
-              </select>
+        {/* Teacher Selector Card */}
+        <div className="portal-card mb-4">
+          <div className="portal-card-header">
+            <i className="bi bi-person-badge" style={{ color: "#2563eb", fontSize: "1.1rem" }}></i>
+            <span style={{ fontWeight: 700, fontSize: ".95rem", color: "#0f172a" }}>Assigned Teacher</span>
+          </div>
+          <div style={{ padding: "1.25rem 1.5rem" }}>
+            <div className="row g-4 align-items-center">
+              {/* Current teacher */}
+              <div className="col-md-6">
+                {selectedTeacher ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div
+                      style={{
+                        width: 50, height: 50,
+                        borderRadius: "50%",
+                        background: "#2563eb",
+                        color: "#fff",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontWeight: 700, fontSize: "1.1rem",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {selectedTeacher.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 700, color: "#0f172a" }}>{selectedTeacher.name}</p>
+                      <p style={{ margin: 0, fontSize: ".8rem", color: "#64748b" }}>{selectedTeacher.email}</p>
+                    </div>
+                    <span style={{ background: "#dcfce7", color: "#15803d", fontSize: ".7rem", fontWeight: 700, padding: ".3em .85em", borderRadius: "50rem", marginLeft: 4 }}>
+                      Active
+                    </span>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#94a3b8" }}>
+                    <div style={{ width: 50, height: 50, borderRadius: "50%", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <i className="bi bi-person-x" style={{ fontSize: "1.3rem" }}></i>
+                    </div>
+                    <span style={{ fontSize: ".875rem" }}>No teacher selected yet.</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Change teacher */}
+              <div className="col-md-6">
+                <label
+                  htmlFor="teacherSelect"
+                  style={{ display: "block", fontSize: ".7rem", fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "#64748b", marginBottom: 6 }}
+                >
+                  Change Teacher
+                </label>
+                <select
+                  id="teacherSelect"
+                  className="form-select form-select-sm"
+                  value={selectedTeacherId}
+                  onChange={handleTeacherChange}
+                  style={{ borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", height: 40, fontSize: ".875rem" }}
+                >
+                  <option value="">— Select a teacher —</option>
+                  {teachers.map((t) => (
+                    <option key={t._id} value={t._id}>
+                      {t.name} ({t.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ── AVAILABLE COURSES ── */}
-      <div className="mb-4">
-        <div className="d-flex align-items-center justify-content-between mb-3">
-          <div>
-            <h5 className="fw-bold text-dark mb-0">Available Courses</h5>
-            <p className="text-muted small mb-0">
+        {/* Available Courses */}
+        <div className="mb-4">
+          <div style={{ marginBottom: "1rem" }}>
+            <h2 style={{ fontWeight: 700, fontSize: "1.1rem", color: "#0f172a", margin: 0 }}>Available Courses</h2>
+            <p style={{ fontSize: ".8rem", color: "#64748b", margin: 0 }}>
               {availableCourses.length} course{availableCourses.length !== 1 ? "s" : ""} offered by your teacher
             </p>
           </div>
-        </div>
 
-        {availableCourses.length > 0 ? (
-          <div className="row g-3">
-            {availableCourses.map((course) => (
-              <div key={course._id} className="col-sm-6 col-xl-4">
-                <div className="card border-0 shadow-sm h-100">
-                  {/* Colored top accent */}
+          {availableCourses.length > 0 ? (
+            <div className="row g-3">
+              {availableCourses.map((course) => (
+                <div key={course._id} className="col-sm-6 col-xl-4">
                   <div
-                    className="rounded-top"
-                    style={{
-                      height: 4,
-                      background: "linear-gradient(90deg,#4f46e5,#818cf8)",
-                    }}
-                  ></div>
-                  <div className="card-body p-4 d-flex flex-column">
-                    <div className="d-flex align-items-start gap-3 mb-3">
-                      <div
-                        className="d-flex align-items-center justify-content-center rounded-2 bg-primary bg-opacity-10 flex-shrink-0"
-                        style={{ width: 44, height: 44 }}
+                    className="portal-card h-100"
+                    style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}
+                  >
+                    <div style={{ height: 4, background: "linear-gradient(90deg,#2563eb,#60a5fa)" }}></div>
+                    <div style={{ padding: "1.25rem", flex: 1, display: "flex", flexDirection: "column" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: "1rem" }}>
+                        <div
+                          style={{
+                            width: 44, height: 44,
+                            borderRadius: 10,
+                            background: "#dbeafe",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <i className="bi bi-journal-code" style={{ color: "#2563eb", fontSize: "1.2rem" }}></i>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ margin: 0, fontWeight: 700, color: "#0f172a", fontSize: ".95rem", lineHeight: 1.3 }}>
+                            {course.name}
+                          </p>
+                          <p style={{ margin: 0, fontSize: ".78rem", color: "#64748b", marginTop: 2 }}>
+                            <i className="bi bi-person me-1"></i>
+                            {course.teacher?.name || "N/A"}
+                          </p>
+                        </div>
+                      </div>
+                      <p style={{ fontSize: ".8rem", color: "#64748b", flex: 1, lineHeight: 1.6, marginBottom: "1rem" }}>
+                        {course.description || "No description available."}
+                      </p>
+                      <button
+                        className="btn btn-primary btn-sm w-100 d-flex align-items-center justify-content-center gap-2"
+                        style={{ borderRadius: 8, fontWeight: 600, height: 38 }}
+                        onClick={() => handleEnroll(course._id)}
+                        disabled={enrollingId === course._id}
                       >
-                        <i className="bi bi-journal-code text-primary fs-5"></i>
-                      </div>
-                      <div className="flex-grow-1">
-                        <h6 className="fw-bold text-dark mb-1 lh-sm">
-                          {course.name}
-                        </h6>
-                        <p className="text-muted mb-0 small">
-                          <i className="bi bi-person me-1"></i>
-                          {course.teacher?.name || "N/A"}
-                        </p>
-                      </div>
+                        {enrollingId === course._id ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm"></span>
+                            Enrolling…
+                          </>
+                        ) : (
+                          <>
+                            <i className="bi bi-plus-circle"></i>
+                            Enroll Now
+                          </>
+                        )}
+                      </button>
                     </div>
-                    <p className="text-muted small flex-grow-1 mb-3 lh-base">
-                      {course.description || "No description available."}
-                    </p>
-                    <button
-                      className="btn btn-primary btn-sm w-100 rounded-2 fw-semibold d-flex align-items-center justify-content-center gap-2"
-                      onClick={() => handleEnroll(course._id)}
-                      disabled={enrollingId === course._id}
-                      style={{ height: 38 }}
-                    >
-                      {enrollingId === course._id ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm"></span>
-                          Enrolling…
-                        </>
-                      ) : (
-                        <>
-                          <i className="bi bi-plus-circle"></i>
-                          Enroll Now
-                        </>
-                      )}
-                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="card border-0 shadow-sm border-dashed">
-            <div className="card-body text-center py-5">
-              <i className="bi bi-journals fs-1 text-muted opacity-50 d-block mb-2"></i>
-              <p className="text-muted mb-1 fw-medium">No courses available</p>
-              <p className="text-muted small mb-0">
+              ))}
+            </div>
+          ) : (
+            <div className="portal-card text-center py-5">
+              <i className="bi bi-journals" style={{ fontSize: "2.5rem", color: "#cbd5e1", display: "block", marginBottom: "1rem" }}></i>
+              <p style={{ fontWeight: 600, color: "#64748b", margin: 0 }}>No courses available</p>
+              <p style={{ fontSize: ".8rem", color: "#94a3b8", margin: ".25rem 0 0" }}>
                 Select a teacher to see their courses.
               </p>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* ── ENROLLED COURSES ── */}
-      <div>
-        <div className="d-flex align-items-center justify-content-between mb-3">
-          <div>
-            <h5 className="fw-bold text-dark mb-0">My Enrolled Courses</h5>
-            <p className="text-muted small mb-0">
+        {/* Enrolled Courses */}
+        <div>
+          <div style={{ marginBottom: "1rem" }}>
+            <h2 style={{ fontWeight: 700, fontSize: "1.1rem", color: "#0f172a", margin: 0 }}>My Enrolled Courses</h2>
+            <p style={{ fontSize: ".8rem", color: "#64748b", margin: 0 }}>
               {enrolledCourses.length} course{enrolledCourses.length !== 1 ? "s" : ""} in progress
             </p>
           </div>
-        </div>
 
-        {enrolledCourses.length > 0 ? (
-          <div className="row g-3">
-            {enrolledCourses.map((course) => (
-              <div key={course._id} className="col-sm-6 col-xl-4">
-                <div className="card border-0 shadow-sm h-100">
-                  <div
-                    className="rounded-top"
-                    style={{
-                      height: 4,
-                      background: "linear-gradient(90deg,#10b981,#34d399)",
-                    }}
-                  ></div>
-                  <div className="card-body p-4">
-                    <div className="d-flex align-items-start gap-3 mb-3">
-                      <div
-                        className="d-flex align-items-center justify-content-center rounded-2 bg-success bg-opacity-10 flex-shrink-0"
-                        style={{ width: 44, height: 44 }}
-                      >
-                        <i className="bi bi-bookmark-check-fill text-success fs-5"></i>
+          {enrolledCourses.length > 0 ? (
+            <div className="row g-3">
+              {enrolledCourses.map((course) => (
+                <div key={course._id} className="col-sm-6 col-xl-4">
+                  <div className="portal-card h-100" style={{ overflow: "hidden" }}>
+                    <div style={{ height: 4, background: "linear-gradient(90deg,#16a34a,#4ade80)" }}></div>
+                    <div style={{ padding: "1.25rem" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: "1rem" }}>
+                        <div
+                          style={{
+                            width: 44, height: 44,
+                            borderRadius: 10,
+                            background: "#dcfce7",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <i className="bi bi-bookmark-check-fill" style={{ color: "#16a34a", fontSize: "1.2rem" }}></i>
+                        </div>
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 700, color: "#0f172a", fontSize: ".95rem", lineHeight: 1.3 }}>
+                            {course.name}
+                          </p>
+                          <p style={{ margin: 0, fontSize: ".78rem", color: "#64748b", marginTop: 2 }}>
+                            <i className="bi bi-person me-1"></i>
+                            {course.teacher?.name || "N/A"}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h6 className="fw-bold text-dark mb-1 lh-sm">
-                          {course.name}
-                        </h6>
-                        <p className="text-muted mb-0 small">
-                          <i className="bi bi-person me-1"></i>
-                          {course.teacher?.name || "N/A"}
-                        </p>
-                      </div>
+                      <p style={{ fontSize: ".8rem", color: "#64748b", lineHeight: 1.6, marginBottom: "1rem" }}>
+                        {course.description || "No description available."}
+                      </p>
+                      <span style={{ background: "#dcfce7", color: "#15803d", fontSize: ".7rem", fontWeight: 700, padding: ".35em .9em", borderRadius: "50rem" }}>
+                        <i className="bi bi-check2-circle me-1"></i>Enrolled
+                      </span>
                     </div>
-                    <p className="text-muted small mb-3 lh-base">
-                      {course.description || "No description available."}
-                    </p>
-                    <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 small fw-semibold">
-                      <i className="bi bi-check2-circle me-1"></i>Enrolled
-                    </span>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="card border-0 shadow-sm">
-            <div className="card-body text-center py-5">
-              <i className="bi bi-collection fs-1 text-muted opacity-50 d-block mb-2"></i>
-              <p className="text-muted mb-1 fw-medium">No enrolled courses</p>
-              <p className="text-muted small mb-0">
+              ))}
+            </div>
+          ) : (
+            <div className="portal-card text-center py-5">
+              <i className="bi bi-collection" style={{ fontSize: "2.5rem", color: "#cbd5e1", display: "block", marginBottom: "1rem" }}></i>
+              <p style={{ fontWeight: 600, color: "#64748b", margin: 0 }}>No enrolled courses</p>
+              <p style={{ fontSize: ".8rem", color: "#94a3b8", margin: ".25rem 0 0" }}>
                 Browse available courses above to get started.
               </p>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* ── TEACHER SELECTION MODAL ── */}
+      {/* Teacher Selection Modal */}
       <div
         className="modal fade"
         id="teacherModal"
@@ -407,53 +405,75 @@ const CourseEnrollment = () => {
         aria-hidden="true"
       >
         <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content border-0 shadow-lg rounded-4">
-            <div className="modal-header border-0 pb-0 px-4 pt-4">
-              <div>
-                <h5 className="modal-title fw-bold text-dark" id="teacherModalLabel">
-                  Choose Your Teacher
-                </h5>
-                <p className="text-muted small mb-0">
-                  Select a teacher to access their courses.
-                </p>
+          <div className="modal-content border-0" style={{ borderRadius: 16, boxShadow: "0 20px 60px rgba(0,0,0,.18)" }}>
+            <div style={{ padding: "1.5rem 1.5rem 1rem", borderBottom: "1px solid #f1f5f9" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                <div>
+                  <h5 className="modal-title fw-bold" id="teacherModalLabel" style={{ color: "#0f172a", margin: 0 }}>
+                    Choose Your Teacher
+                  </h5>
+                  <p style={{ fontSize: ".8rem", color: "#64748b", margin: ".25rem 0 0" }}>
+                    Select a teacher to access their courses.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowTeacherModal(false)}
+                  aria-label="Close"
+                ></button>
               </div>
-              <button
-                type="button"
-                className="btn-close ms-auto"
-                onClick={() => setShowTeacherModal(false)}
-                aria-label="Close"
-              ></button>
             </div>
-            <div className="modal-body px-4 pt-3 pb-4">
+            <div style={{ padding: "1rem 1.5rem 1.5rem" }}>
               {teachers.length === 0 ? (
                 <div className="text-center py-4">
-                  <i className="bi bi-person-x fs-1 text-muted opacity-50 d-block mb-2"></i>
-                  <p className="text-muted small mb-0">No teachers available at this time.</p>
+                  <i className="bi bi-person-x" style={{ fontSize: "2.5rem", color: "#cbd5e1", display: "block", marginBottom: ".75rem" }}></i>
+                  <p style={{ color: "#64748b", fontSize: ".875rem", margin: 0 }}>No teachers available at this time.</p>
                 </div>
               ) : (
-                <div className="d-flex flex-column gap-2">
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {teachers.map((teacher) => (
                     <button
                       key={teacher._id}
-                      className="btn btn-light text-start d-flex align-items-center gap-3 rounded-3 border p-3"
-                      style={{ transition: "all .15s" }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        padding: "12px 14px",
+                        background: "#f8fafc",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 10,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        transition: "border-color .15s, background .15s",
+                        width: "100%",
+                      }}
                       onClick={() => handleSelectTeacher(teacher._id)}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "#2563eb"; e.currentTarget.style.background = "#eff6ff"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.background = "#f8fafc"; }}
                     >
                       <div
-                        className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                        style={{ width: 42, height: 42, fontSize: 16 }}
+                        style={{
+                          width: 42, height: 42,
+                          borderRadius: "50%",
+                          background: "#2563eb",
+                          color: "#fff",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontWeight: 700, fontSize: "1rem",
+                          flexShrink: 0,
+                        }}
                       >
                         {teacher.name.charAt(0).toUpperCase()}
                       </div>
-                      <div className="flex-grow-1 overflow-hidden">
-                        <p className="mb-0 fw-semibold text-dark text-truncate">
+                      <div style={{ flex: 1, overflow: "hidden" }}>
+                        <p style={{ margin: 0, fontWeight: 600, color: "#0f172a", fontSize: ".9rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {teacher.name}
                         </p>
-                        <p className="mb-0 text-muted small text-truncate">
+                        <p style={{ margin: 0, fontSize: ".75rem", color: "#64748b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {teacher.email}
                         </p>
                       </div>
-                      <i className="bi bi-arrow-right-circle text-primary fs-5 flex-shrink-0"></i>
+                      <i className="bi bi-arrow-right-circle" style={{ color: "#2563eb", fontSize: "1.1rem", flexShrink: 0 }}></i>
                     </button>
                   ))}
                 </div>
